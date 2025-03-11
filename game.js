@@ -31,7 +31,10 @@ const camera = {
     x: 0,
     y: 0,
     width: canvas.width,
-    height: canvas.height
+    height: canvas.height,
+    baseY: 0,  // Base vertical position
+    verticalDeadzone: 200,  // Pixels from center before camera moves vertically
+    smoothing: 0.1  // Camera smoothing factor
 };
 
 // Shadow settings
@@ -165,9 +168,22 @@ function updatePlayer() {
         }
     });
 
-    // Update camera to follow player
-    camera.x = Math.max(0, Math.min(player.x - canvas.width / 2, WORLD.width - canvas.width));
-    camera.y = Math.max(0, Math.min(player.y - canvas.height / 2, WORLD.height - canvas.height));
+    // Update camera with smoother following and vertical deadzone
+    const targetX = Math.max(0, Math.min(player.x - canvas.width / 2, WORLD.width - canvas.width));
+    
+    // Only move camera vertically if player is outside the deadzone
+    const screenCenterY = camera.y + canvas.height / 2;
+    const playerDistanceFromCenter = player.y - screenCenterY;
+    
+    let targetY = camera.y;
+    if (Math.abs(playerDistanceFromCenter) > camera.verticalDeadzone) {
+        const targetPlayerY = player.y - canvas.height / 2;
+        targetY = Math.max(0, Math.min(targetPlayerY, WORLD.height - canvas.height));
+    }
+    
+    // Smooth camera movement
+    camera.x += (targetX - camera.x) * camera.smoothing;
+    camera.y += (targetY - camera.y) * camera.smoothing;
 
     // Update thought timer
     player.thoughtTimer++;
