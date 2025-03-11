@@ -329,7 +329,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (decoration.type === 'waterCan') {
                             GAME_STATE.waterCans++;
                             GAME_STATE.score += 10;
-                            FIRE.x = -canvas.width;  // Reset fire to extreme left
+                            // Reset fire to far behind the player's current position
+                            FIRE.x = player.x - (canvas.width * 2);  // Two screen widths behind the player
                             GAME_STATE.fireSpeed = FIRE.baseSpeed;  // Reset fire speed to base speed
                         }
                     }
@@ -413,7 +414,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     GAME_STATE.lastFireUpdate = Date.now();
                     player.x = canvas.width * 0.5;  // Reset to center
                     player.y = WORLD.height - 300;
-                    FIRE.x = -canvas.width;  // Reset to extreme left
+                    FIRE.x = player.x - (canvas.width * 2);  // Two screen widths behind the player
                     platforms.length = 1; // Keep only ground
                     generateInitialPlatforms();
                     initFireParticles();
