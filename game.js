@@ -25,28 +25,28 @@ const camera = {
     height: canvas.height
 };
 
-// Game objects
+// Game objects - positioned relative to screen size for better scaling
 const gameObjects = [
     // Trees
-    { type: 'tree', x: 100, y: 100, width: 40, height: 60, color: '#0B5345' },
-    { type: 'tree', x: 300, y: 200, width: 40, height: 60, color: '#0B5345' },
-    { type: 'tree', x: 800, y: 500, width: 40, height: 60, color: '#0B5345' },
-    { type: 'tree', x: 1200, y: 300, width: 40, height: 60, color: '#0B5345' },
-    { type: 'tree', x: 1500, y: 800, width: 40, height: 60, color: '#0B5345' },
+    { type: 'tree', x: canvas.width * 0.2, y: canvas.height * 0.2, width: 40, height: 60, color: '#0B5345' },
+    { type: 'tree', x: canvas.width * 0.5, y: canvas.height * 0.3, width: 40, height: 60, color: '#0B5345' },
+    { type: 'tree', x: canvas.width * 1.2, y: canvas.height * 0.8, width: 40, height: 60, color: '#0B5345' },
+    { type: 'tree', x: canvas.width * 1.8, y: canvas.height * 0.5, width: 40, height: 60, color: '#0B5345' },
+    { type: 'tree', x: canvas.width * 2.2, y: canvas.height * 1.2, width: 40, height: 60, color: '#0B5345' },
     // Huts
-    { type: 'hut', x: 500, y: 400, width: 80, height: 80, color: '#8B4513' },
-    { type: 'hut', x: 1000, y: 600, width: 80, height: 80, color: '#8B4513' },
-    { type: 'hut', x: 1800, y: 900, width: 80, height: 80, color: '#8B4513' },
+    { type: 'hut', x: canvas.width * 0.8, y: canvas.height * 0.6, width: 80, height: 80, color: '#8B4513' },
+    { type: 'hut', x: canvas.width * 1.5, y: canvas.height * 0.9, width: 80, height: 80, color: '#8B4513' },
+    { type: 'hut', x: canvas.width * 2.5, y: canvas.height * 1.4, width: 80, height: 80, color: '#8B4513' },
     // Rocks
-    { type: 'rock', x: 250, y: 350, width: 30, height: 30, color: '#707B7C' },
-    { type: 'rock', x: 900, y: 750, width: 30, height: 30, color: '#707B7C' },
-    { type: 'rock', x: 1600, y: 400, width: 30, height: 30, color: '#707B7C' }
+    { type: 'rock', x: canvas.width * 0.4, y: canvas.height * 0.5, width: 30, height: 30, color: '#707B7C' },
+    { type: 'rock', x: canvas.width * 1.3, y: canvas.height * 1.1, width: 30, height: 30, color: '#707B7C' },
+    { type: 'rock', x: canvas.width * 2.3, y: canvas.height * 0.7, width: 30, height: 30, color: '#707B7C' }
 ];
 
-// Player character
+// Player character - start near top-left corner
 const player = {
-    x: WORLD.width / 2,
-    y: WORLD.height / 2,
+    x: canvas.width * 0.1,  // Start at 10% of screen width
+    y: canvas.height * 0.1, // Start at 10% of screen height
     width: 32,
     height: 32,
     speed: 5,
@@ -177,6 +177,13 @@ function draw() {
     ctx.strokeStyle = '#000000';
     ctx.lineWidth = 4;
     ctx.strokeRect(-camera.x, -camera.y, WORLD.width, WORLD.height);
+
+    // Draw debug info
+    ctx.fillStyle = '#000000';
+    ctx.font = '16px Arial';
+    ctx.fillText(`Player: (${Math.round(player.x)}, ${Math.round(player.y)})`, 10, 20);
+    ctx.fillText(`Camera: (${Math.round(camera.x)}, ${Math.round(camera.y)})`, 10, 40);
+    ctx.fillText('Use arrow keys to move', 10, 60);
 }
 
 // Game loop
