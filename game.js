@@ -48,39 +48,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Visual settings
         const COLORS = {
-            background: '#1E1E2E',      // Darker background
-            platform: '#4A4A5E',        // Lighter platform color
-            ground: '#5D5D7D',          // Lighter ground color
-            player: '#FF5D5D',          // Brighter player color
-            coin: '#FFD700',            // Bright gold
-            uiBackground: 'rgba(0, 0, 0, 0.8)',  // Darker UI background
-            uiText: '#FFFFFF'           // White text
+            background: '#1E1E2E',      // Dark background
+            platform: '#4A4A5E',        // Platform color
+            ground: '#5D5D7D',          // Ground color
+            player: '#4488FF',          // Blue player
+            fire: '#FF4400',           // Fire color
+            fireParticle: '#FF8844',   // Fire particle color
+            uiBackground: 'rgba(0, 0, 0, 0.8)',  // Dark UI background
+            uiText: '#FFFFFF',          // White text
+            distanceMeter: '#FF4400'    // Fire distance meter color
         };
 
         // Player sprite settings
         const SPRITE = {
-            width: 32,
-            height: 32,
-            scale: 1.5,
-            frameRate: 8,  // Frames per animation cycle
-            states: {
-                idle: {
-                    frames: ['current'],  // Will be replaced with current emotion
-                    frameDelay: 30
-                },
-                running: {
-                    frames: ['current'],  // Will be replaced with current emotion
-                    frameDelay: 10
-                },
-                jumping: {
-                    frames: ['current'],  // Will be replaced with current emotion
-                    frameDelay: 0
-                },
-                falling: {
-                    frames: ['current'],  // Will be replaced with current emotion
-                    frameDelay: 0
-                }
-            }
+            width: 30,
+            height: 40,
+            scale: 1,
+            color: COLORS.player,
+            runFrame: 0,
+            runFrameCount: 4,
+            frameRate: 8
         };
 
         // Camera settings
@@ -112,29 +99,30 @@ document.addEventListener('DOMContentLoaded', function() {
         // Game state
         const GAME_STATE = {
             score: 0,
-            currentEmotion: '😊',  // Start with happy
-            currentFeeling: 'I am feeling happy today!',
-            emotions: [
-                { emoji: '😊', text: 'I am feeling happy today!' },
-                { emoji: '😢', text: 'I am feeling sad right now...' },
-                { emoji: '😴', text: 'I am feeling tired...' },
-                { emoji: '😡', text: 'I am feeling angry!' },
-                { emoji: '🤔', text: 'I am feeling thoughtful.' },
-                { emoji: '😌', text: 'I am feeling peaceful.' },
-                { emoji: '🥳', text: 'I am feeling excited!' },
-                { emoji: '😰', text: 'I am feeling anxious.' },
-                { emoji: '🥰', text: 'I am feeling loved.' },
-                { emoji: '😤', text: 'I am feeling frustrated.' }
-            ]
+            waterCans: 0,
+            distanceFromFire: 500,  // Starting distance from fire
+            fireSpeed: 2,           // Base speed of fire
+            fireAcceleration: 0.001, // Fire speeds up over time
+            gameOver: false
         };
 
         // Platform decoration settings
         const DECORATION = {
-            emojiChance: 0.3,  // 30% chance for a platform to have an emoji
-            coinChance: 0.4,   // 40% chance for a platform to have a coin
-            coinValue: 10,     // Each coin is worth 10 points
-            coinSize: 20,      // Size of coin in pixels
-            emojiSize: 30      // Size of emoji in pixels
+            waterCanChance: 0.4,    // 40% chance for a platform to have a water can
+            waterCanValue: 100,     // Each water can pushes fire back by 100 units
+            waterCanSize: 25,       // Size of water can in pixels
+        };
+
+        // Fire wall settings
+        const FIRE = {
+            x: 0,
+            width: 200,
+            particles: [],
+            maxParticles: 50,
+            particleSize: { min: 10, max: 30 },
+            particleSpeed: { min: 1, max: 3 },
+            updateInterval: 50,  // ms between particle updates
+            lastUpdate: 0
         };
 
         // Sound effects
@@ -191,7 +179,7 @@ document.addEventListener('DOMContentLoaded', function() {
             direction: 1,  // 1 for right, -1 for left
             state: 'idle',
             frameIndex: 0,
-            frameDelay: SPRITE.states.idle.frameDelay,
+            frameDelay: SPRITE.frameRate,
             frameCounter: 0
         };
 
@@ -249,28 +237,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     decorations: []  // Initialize empty decorations array
                 };
 
-                // Add emoji with 30% chance
-                if (Math.random() < DECORATION.emojiChance) {
-                    const randomEmotion = GAME_STATE.emotions[Math.floor(Math.random() * GAME_STATE.emotions.length)];
+                // Add water can with 40% chance
+                if (Math.random() < DECORATION.waterCanChance) {
                     newPlatform.decorations.push({
-                        type: 'emoji',
-                        x: newPlatform.width / 2 - DECORATION.emojiSize / 2,
-                        y: -DECORATION.emojiSize,
-                        width: DECORATION.emojiSize,
-                        height: DECORATION.emojiSize,
-                        content: randomEmotion.emoji,
-                        collected: false
-                    });
-                }
-
-                // Add coin with 40% chance
-                if (Math.random() < DECORATION.coinChance) {
-                    newPlatform.decorations.push({
-                        type: 'coin',
-                        x: newPlatform.width / 3,
-                        y: -DECORATION.coinSize,
-                        width: DECORATION.coinSize,
-                        height: DECORATION.coinSize,
+                        type: 'waterCan',
+                        x: newPlatform.width / 2 - DECORATION.waterCanSize / 2,
+                        y: -DECORATION.waterCanSize,
+                        width: DECORATION.waterCanSize,
+                        height: DECORATION.waterCanSize,
                         collected: false
                     });
                 }
@@ -310,28 +284,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 decorations: []
             };
 
-            // Add emoji with 30% chance
-            if (Math.random() < DECORATION.emojiChance) {
-                const randomEmotion = GAME_STATE.emotions[Math.floor(Math.random() * GAME_STATE.emotions.length)];
+            // Add water can with 40% chance
+            if (Math.random() < DECORATION.waterCanChance) {
                 platform.decorations.push({
-                    type: 'emoji',
-                    x: platform.width / 2 - DECORATION.emojiSize / 2,
-                    y: -DECORATION.emojiSize,
-                    width: DECORATION.emojiSize,
-                    height: DECORATION.emojiSize,
-                    content: randomEmotion.emoji,
-                    collected: false
-                });
-            }
-
-            // Add coin with 40% chance
-            if (Math.random() < DECORATION.coinChance) {
-                platform.decorations.push({
-                    type: 'coin',
-                    x: platform.width / 3,
-                    y: -DECORATION.coinSize,
-                    width: DECORATION.coinSize,
-                    height: DECORATION.coinSize,
+                    type: 'waterCan',
+                    x: platform.width / 2 - DECORATION.waterCanSize / 2,
+                    y: -DECORATION.waterCanSize,
+                    width: DECORATION.waterCanSize,
+                    height: DECORATION.waterCanSize,
                     collected: false
                 });
             }
@@ -363,20 +323,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (checkCollision(player, decorationRect)) {
                         decoration.collected = true;
                         
-                        if (decoration.type === 'coin') {
-                            GAME_STATE.score += DECORATION.coinValue;
-                            // Play coin sound
-                            SOUNDS.coin.currentTime = 0;
-                            SOUNDS.coin.play().catch(err => console.log('Audio play failed:', err));
-                        } else if (decoration.type === 'emoji') {
-                            const newEmotion = GAME_STATE.emotions.find(e => e.emoji === decoration.content);
-                            if (newEmotion) {
-                                GAME_STATE.currentEmotion = newEmotion.emoji;
-                                GAME_STATE.currentFeeling = newEmotion.text;
-                                // Play emoji sound
-                                SOUNDS.emoji.currentTime = 0;
-                                SOUNDS.emoji.play().catch(err => console.log('Audio play failed:', err));
-                            }
+                        if (decoration.type === 'waterCan') {
+                            GAME_STATE.waterCans++;
+                            GAME_STATE.score += 10;
+                            FIRE.x -= DECORATION.waterCanValue; // Push fire back
                         }
                     }
                 }
@@ -432,7 +382,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (newState !== player.state) {
                 player.state = newState;
                 player.frameIndex = 0;
-                player.frameDelay = SPRITE.states[newState].frameDelay;
+                player.frameDelay = SPRITE.frameRate;
                 player.frameCounter = 0;
             }
 
@@ -441,13 +391,30 @@ document.addEventListener('DOMContentLoaded', function() {
                 player.frameCounter++;
                 if (player.frameCounter >= player.frameDelay) {
                     player.frameCounter = 0;
-                    player.frameIndex = (player.frameIndex + 1) % SPRITE.states[player.state].frames.length;
+                    player.frameIndex = (player.frameIndex + 1) % SPRITE.runFrameCount;
                 }
             }
         }
 
         // Update player position and physics
         function updatePlayer() {
+            if (GAME_STATE.gameOver) {
+                if (keys.Space) {
+                    // Reset game
+                    GAME_STATE.gameOver = false;
+                    GAME_STATE.score = 0;
+                    GAME_STATE.waterCans = 0;
+                    GAME_STATE.distanceFromFire = 500;
+                    GAME_STATE.fireSpeed = 2;
+                    player.x = canvas.width * 0.1;
+                    player.y = WORLD.height - 300;
+                    FIRE.x = 0;
+                    platforms.length = 1; // Keep only ground
+                    generateInitialPlatforms();
+                }
+                return;
+            }
+
             // Store previous position for collision resolution
             const previousX = player.x;
             const previousY = player.y;
@@ -562,7 +529,10 @@ document.addEventListener('DOMContentLoaded', function() {
             ctx.fillStyle = COLORS.background;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Draw platforms with shadows
+            // Draw fire first
+            drawFire();
+
+            // Draw platforms
             platforms.forEach(platform => {
                 const screenX = platform.x - camera.x;
                 const screenY = platform.y - camera.y;
@@ -572,55 +542,26 @@ document.addEventListener('DOMContentLoaded', function() {
                     screenY + platform.height >= 0 && 
                     screenY <= canvas.height) {
                     
-                    // Draw platform shadow
-                    ctx.save();
-                    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-                    ctx.shadowBlur = SHADOW_BLUR;
-                    ctx.shadowOffsetX = 0;
-                    ctx.shadowOffsetY = SHADOW_OFFSET;
-                    
+                    // Draw platform
                     ctx.fillStyle = platform.isGround ? COLORS.ground : COLORS.platform;
                     ctx.fillRect(screenX, screenY, platform.width, platform.height);
-                    
-                    ctx.restore();
 
-                    // Draw decorations
+                    // Draw water cans
                     platform.decorations.forEach(decoration => {
-                        if (!decoration.collected) {
+                        if (!decoration.collected && decoration.type === 'waterCan') {
                             const decorationX = screenX + decoration.x;
                             const decorationY = screenY + decoration.y;
 
-                            if (decoration.type === 'coin') {
-                                // Draw coin with glow
-                                ctx.save();
-                                ctx.shadowColor = COLORS.coin;
-                                ctx.shadowBlur = 15;
-                                ctx.fillStyle = COLORS.coin;
-                                ctx.beginPath();
-                                ctx.arc(
-                                    decorationX + decoration.width/2,
-                                    decorationY + decoration.height/2,
-                                    decoration.width/2,
-                                    0,
-                                    Math.PI * 2
-                                );
-                                ctx.fill();
-                                ctx.restore();
-                            } else if (decoration.type === 'emoji') {
-                                // Draw emoji with glow
-                                ctx.save();
-                                ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
-                                ctx.shadowBlur = 10;
-                                ctx.font = `${decoration.height}px Arial`;
-                                ctx.textAlign = 'center';
-                                ctx.textBaseline = 'middle';
-                                ctx.fillText(
-                                    decoration.content,
-                                    decorationX + decoration.width/2,
-                                    decorationY + decoration.height/2
-                                );
-                                ctx.restore();
-                            }
+                            // Draw water can
+                            ctx.save();
+                            ctx.font = `${DECORATION.waterCanSize}px Arial`;
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+                            ctx.fillText('🚰', 
+                                decorationX + decoration.width/2,
+                                decorationY + decoration.height/2
+                            );
+                            ctx.restore();
                         }
                     });
                 }
@@ -630,41 +571,88 @@ document.addEventListener('DOMContentLoaded', function() {
             const playerScreenX = player.x - camera.x;
             const playerScreenY = player.y - camera.y;
 
-            // Draw the character sprite
             ctx.save();
-            ctx.font = `${SPRITE.height * SPRITE.scale}px Arial`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-
-            // Apply horizontal flip if moving left
-            if (player.direction === -1) {
-                ctx.scale(-1, 1);
-                ctx.translate(-(playerScreenX * 2 + player.width), 0);
-            }
-
-            // Draw the current emotion as the player sprite
-            ctx.fillText(
-                GAME_STATE.currentEmotion,
-                playerScreenX + player.width / 2,
-                playerScreenY + player.height / 2
+            ctx.fillStyle = SPRITE.color;
+            ctx.fillRect(
+                playerScreenX,
+                playerScreenY,
+                player.width,
+                player.height
             );
-
             ctx.restore();
 
-            // Draw UI with enhanced visibility
+            // Draw UI
+            drawUI();
+        }
+
+        // Draw fire
+        function drawFire() {
+            const screenX = FIRE.x - camera.x;
+            
+            // Draw base fire rectangle
+            ctx.fillStyle = COLORS.fire;
+            ctx.fillRect(screenX, 0, FIRE.width, WORLD.height);
+            
+            // Draw fire particles
             ctx.save();
+            ctx.globalAlpha = 0.7;
+            FIRE.particles.forEach(particle => {
+                ctx.fillStyle = COLORS.fireParticle;
+                ctx.beginPath();
+                ctx.arc(
+                    screenX + particle.x,
+                    particle.y,
+                    particle.size,
+                    0,
+                    Math.PI * 2
+                );
+                ctx.fill();
+            });
+            ctx.restore();
+        }
+
+        // Draw UI
+        function drawUI() {
+            ctx.save();
+            
+            // Draw UI background
             ctx.fillStyle = COLORS.uiBackground;
             ctx.fillRect(0, 0, canvas.width, 60);
             
-            // Draw current emotion and feeling
+            // Draw water cans collected
             ctx.font = 'bold 20px Arial';
             ctx.fillStyle = COLORS.uiText;
             ctx.textAlign = 'left';
-            ctx.fillText(`${GAME_STATE.currentEmotion} ${GAME_STATE.currentFeeling}`, 20, 35);
+            ctx.fillText(`Water Cans: ${GAME_STATE.waterCans}`, 20, 35);
             
-            // Draw score without glow
+            // Draw distance from fire
             ctx.textAlign = 'right';
-            ctx.fillText(`Score: ${GAME_STATE.score}`, canvas.width - 20, 35);
+            ctx.fillText(`Distance: ${Math.floor(GAME_STATE.distanceFromFire)}m`, canvas.width - 20, 35);
+            
+            // Draw distance meter
+            const meterWidth = 200;
+            const meterHeight = 10;
+            const meterX = (canvas.width - meterWidth) / 2;
+            const meterY = 25;
+            
+            // Background
+            ctx.fillStyle = '#333';
+            ctx.fillRect(meterX, meterY, meterWidth, meterHeight);
+            
+            // Fire distance indicator
+            const distanceRatio = Math.min(GAME_STATE.distanceFromFire / 1000, 1);
+            ctx.fillStyle = COLORS.distanceMeter;
+            ctx.fillRect(meterX, meterY, meterWidth * distanceRatio, meterHeight);
+            
+            // Game Over message
+            if (GAME_STATE.gameOver) {
+                ctx.font = 'bold 48px Arial';
+                ctx.fillStyle = COLORS.fire;
+                ctx.textAlign = 'center';
+                ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2);
+                ctx.font = 'bold 24px Arial';
+                ctx.fillText('Press SPACE to restart', canvas.width / 2, canvas.height / 2 + 50);
+            }
             
             ctx.restore();
         }
