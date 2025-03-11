@@ -13,11 +13,10 @@ window.addEventListener('resize', resizeCanvas);
 
 // Physics constants
 const GRAVITY = 0.4;
-const MIN_JUMP_FORCE = -10;
-const MAX_JUMP_FORCE = -18;
-const JUMP_CHARGE_RATE = 0.5;
+const JUMP_FORCE = -8;  // Constant upward force while space is held
 const MOVE_SPEED = 4;
 const FRICTION = 0.8;
+const TERMINAL_VELOCITY = 12;  // Maximum fall speed
 
 // Game world settings
 const WORLD = {
@@ -63,16 +62,15 @@ const player = {
     velocityX: 0,
     velocityY: 0,
     isGrounded: false,
-    jumpCharge: 0,
-    isCharging: false,
+    isJumping: false,
     color: '#DE4949',  // Thomas's red color
     name: "Thomas",
     thoughts: [
         "I was alone.",
         "But somehow, that was okay.",
         "The world felt... interesting.",
-        "I discovered I could jump higher...",
-        "...if I focused my energy longer."
+        "I could float through the air...",
+        "...as long as I focused."
     ],
     currentThought: 0,
     thoughtTimer: 0
@@ -89,9 +87,9 @@ const keys = {
 window.addEventListener('keydown', (e) => {
     if (e.code === 'Space') {
         keys.Space = true;
-        if (player.isGrounded && !player.isCharging) {
-            player.isCharging = true;
-            player.jumpCharge = 0;  // Reset jump charge when starting
+        if (player.isGrounded) {
+            player.isJumping = true;
+            player.isGrounded = false;
         }
     } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
         keys[e.key] = true;
@@ -101,12 +99,7 @@ window.addEventListener('keydown', (e) => {
 window.addEventListener('keyup', (e) => {
     if (e.code === 'Space') {
         keys.Space = false;
-        if (player.isCharging) {
-            // Apply the charged jump
-            player.velocityY = Math.min(MAX_JUMP_FORCE, MIN_JUMP_FORCE - player.jumpCharge);
-            player.isGrounded = false;
-            player.isCharging = false;
-        }
+        player.isJumping = false;
     } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
         keys[e.key] = false;
     }
@@ -122,25 +115,25 @@ function checkCollision(rect1, rect2) {
 
 // Update player position and physics
 function updatePlayer() {
-    // Apply horizontal movement
+    // Apply horizontal movement with air control
     if (keys.ArrowLeft) {
-        player.velocityX = -MOVE_SPEED;
+        // Slower acceleration in air
+        const acceleration = player.isGrounded ? MOVE_SPEED : MOVE_SPEED * 0.7;
+        player.velocityX = -acceleration;
     } else if (keys.ArrowRight) {
-        player.velocityX = MOVE_SPEED;
+        const acceleration = player.isGrounded ? MOVE_SPEED : MOVE_SPEED * 0.7;
+        player.velocityX = acceleration;
     } else {
         player.velocityX *= FRICTION;
     }
 
-    // Handle jump charging
-    if (player.isCharging && player.isGrounded) {
-        player.jumpCharge = Math.min(player.jumpCharge + JUMP_CHARGE_RATE, Math.abs(MAX_JUMP_FORCE - MIN_JUMP_FORCE));
-        player.velocityY = 0;  // Stay in place while charging
+    // Apply jump force while space is held and player is jumping
+    if (keys.Space && player.isJumping) {
+        player.velocityY = JUMP_FORCE;
     }
 
-    // Apply gravity if not charging
-    if (!player.isCharging) {
-        player.velocityY += GRAVITY;
-    }
+    // Apply gravity
+    player.velocityY = Math.min(player.velocityY + GRAVITY, TERMINAL_VELOCITY);
 
     // Update position
     player.x += player.velocityX;
@@ -160,11 +153,13 @@ function updatePlayer() {
                 player.y = platform.y - player.height;
                 player.velocityY = 0;
                 player.isGrounded = true;
+                player.isJumping = false;  // Reset jumping state when landing
             }
             // Bottom collision (hitting head)
             else if (player.velocityY < 0 && player.y >= platform.y + platform.height) {
                 player.y = platform.y + platform.height;
                 player.velocityY = 0;
+                player.isJumping = false;  // Stop jumping if hitting head
             }
             // Side collisions
             else if (player.velocityX > 0) {
@@ -219,7 +214,7 @@ function draw() {
         }
     });
 
-    // Draw player (Thomas) with shadow and jump charge indicator
+    // Draw player (Thomas) with shadow and jump effect
     ctx.save();
     ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
     ctx.shadowBlur = SHADOW_BLUR;
@@ -230,21 +225,15 @@ function draw() {
     ctx.fillStyle = player.color;
     ctx.fillRect(player.x - camera.x, player.y - camera.y, player.width, player.height);
     
-    // Draw jump charge indicator if charging
-    if (player.isCharging) {
-        const chargePercent = player.jumpCharge / (MAX_JUMP_FORCE - MIN_JUMP_FORCE);
-        const glowIntensity = 0.3 + (chargePercent * 0.7);  // Glow gets brighter as charge increases
-        
-        // Draw glow effect
-        ctx.shadowColor = `rgba(255, 255, 255, ${glowIntensity})`;
+    // Draw jump effect when jumping
+    if (player.isJumping) {
+        ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
         ctx.shadowBlur = 20;
-        
-        // Draw charge bar
-        ctx.fillStyle = `rgba(255, 255, 255, ${glowIntensity})`;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
         ctx.fillRect(
             player.x - camera.x,
-            player.y - camera.y - 10,
-            player.width * chargePercent,
+            player.y - camera.y + player.height,
+            player.width,
             5
         );
     }
@@ -259,7 +248,7 @@ function draw() {
     // Draw debug info
     ctx.fillStyle = '#FFFFFF';
     ctx.font = '16px Arial';
-    ctx.fillText('Left/Right Arrows to move, Hold SPACE to charge jump', 20, 80);
+    ctx.fillText('Left/Right Arrows to move, Hold SPACE to jump', 20, 80);
 }
 
 // Game loop
