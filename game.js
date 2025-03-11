@@ -5,6 +5,20 @@ const ctx = canvas.getContext('2d');
 function resizeCanvas() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
+    
+    // Update world height when canvas resizes
+    WORLD.height = canvas.height;
+    
+    // Update ground position
+    const ground = platforms.find(p => p.isGround);
+    if (ground) {
+        ground.y = WORLD.height - WORLD.groundHeight;
+    }
+    
+    // Ensure player stays within new bounds
+    if (player) {
+        player.y = Math.min(player.y, WORLD.height - player.height);
+    }
 }
 
 // Initial resize and add event listener for window resize
@@ -31,7 +45,8 @@ const WORLD = {
     maxPlatformSpacing: 300,  // Maximum space between platforms
     platformWidthRange: { min: 150, max: 250 },  // Random platform width range
     platformHeightRange: { min: 20, max: 20 },  // Platform height (keeping consistent for now)
-    groundHeight: 40  // Height of the ground platform
+    groundHeight: 40,  // Height of the ground platform
+    minPlatformY: 100  // Minimum distance from top of screen
 };
 
 // Camera settings
@@ -145,8 +160,8 @@ function generatePlatform() {
                  Math.random() * (WORLD.platformWidthRange.max - WORLD.platformWidthRange.min);
     
     // Create varying heights but ensure they're reachable and within screen bounds
-    const minY = WORLD.height * 0.3;  // Highest point (30% from top)
-    const maxY = WORLD.height - 120;   // Lowest point
+    const minY = WORLD.minPlatformY;  // Minimum distance from top
+    const maxY = WORLD.height - WORLD.groundHeight - 80;  // Keep some space above ground
     const y = minY + Math.random() * (maxY - minY);
     
     const platform = {
@@ -262,8 +277,15 @@ function updatePlayer() {
         }
     });
 
-    // Constrain player to world height
+    // Constrain player to world height with some padding at top
     player.y = Math.max(0, Math.min(player.y, WORLD.height - player.height));
+    
+    // If player falls below ground level, reset to ground
+    if (player.y > WORLD.height - player.height - WORLD.groundHeight) {
+        player.y = WORLD.height - player.height - WORLD.groundHeight;
+        player.velocityY = 0;
+        player.isGrounded = true;
+    }
 
     // Update world after player position is updated
     updateWorld();
