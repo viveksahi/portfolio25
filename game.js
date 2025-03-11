@@ -54,20 +54,20 @@ document.addEventListener('DOMContentLoaded', function() {
         frameRate: 8,  // Frames per animation cycle
         states: {
             idle: {
-                frames: ['😐', '🙂'],
-                frameDelay: 30  // Slower animation for idle
+                frames: ['current'],  // Will be replaced with current emotion
+                frameDelay: 30
             },
             running: {
-                frames: ['🏃', '🏃‍♂️'],
-                frameDelay: 10  // Faster animation for running
+                frames: ['current'],  // Will be replaced with current emotion
+                frameDelay: 10
             },
             jumping: {
-                frames: ['⭐'],
-                frameDelay: 0   // Single frame for jumping
+                frames: ['current'],  // Will be replaced with current emotion
+                frameDelay: 0
             },
             falling: {
-                frames: ['😱'],
-                frameDelay: 0   // Single frame for falling
+                frames: ['current'],  // Will be replaced with current emotion
+                frameDelay: 0
             }
         }
     };
@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Game state
     const GAME_STATE = {
         score: 0,
-        currentEmotion: '😊',
+        currentEmotion: '😊',  // Start with happy
         currentFeeling: 'I am feeling happy today!',
         emotions: [
             { emoji: '😊', text: 'I am feeling happy today!' },
@@ -631,10 +631,9 @@ document.addEventListener('DOMContentLoaded', function() {
             ctx.translate(-(playerScreenX * 2 + player.width), 0);
         }
 
-        // Draw the current frame
-        const currentFrame = SPRITE.states[player.state].frames[player.frameIndex];
+        // Draw the current emotion as the player sprite
         ctx.fillText(
-            currentFrame,
+            GAME_STATE.currentEmotion,
             playerScreenX + player.width / 2,
             playerScreenY + player.height / 2
         );
