@@ -1,21 +1,26 @@
 // Wait for DOM to be fully loaded
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM Content Loaded');
+    
     // Get canvas and context
     const canvas = document.getElementById('gameCanvas');
     if (!canvas) {
         console.error('Canvas element not found!');
         return;
     }
+    console.log('Canvas found:', canvas);
 
     const ctx = canvas.getContext('2d');
     if (!ctx) {
         console.error('Could not get canvas context!');
         return;
     }
+    console.log('Canvas context obtained');
 
     // Set initial canvas size
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
+    console.log('Canvas size set to:', canvas.width, 'x', canvas.height);
 
     // Physics constants
     const GRAVITY = 0.3;
@@ -80,7 +85,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initial platforms
     const platforms = [
         // Ground is special - it moves with the player and is wider than the screen
-        { x: 0, y: WORLD.height - WORLD.groundHeight, width: canvas.width * 3, height: WORLD.groundHeight, color: '#333333', isGround: true }
+        { x: 0, y: WORLD.height - WORLD.groundHeight, width: canvas.width * 3, height: WORLD.groundHeight, color: '#666666', isGround: true }
     ];
 
     // Player character - Thomas
@@ -93,7 +98,7 @@ document.addEventListener('DOMContentLoaded', function() {
         velocityY: 0,
         isGrounded: false,
         isTouchingCeiling: false,
-        color: '#DE4949',
+        color: '#FF4949',  // Brighter red
         name: "Thomas",
         distanceTraveled: 0,
         currentChapter: 0,
@@ -375,8 +380,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Draw game
     function draw() {
-        // Clear canvas with a dark background
-        ctx.fillStyle = '#1C1C1C';
+        console.log('Drawing frame');
+        // Clear canvas with a lighter background
+        ctx.fillStyle = '#2C2C2C';  // Slightly lighter background
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         // Draw platforms with shadows
@@ -398,12 +404,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 ctx.fillStyle = platform.color;
                 ctx.fillRect(screenX, screenY, platform.width, platform.height);
+                console.log('Drew platform at:', screenX, screenY);
                 
                 ctx.restore();
             }
         });
 
         // Draw player (Thomas) with shadow and float effect
+        const playerScreenX = player.x - camera.x;
+        const playerScreenY = player.y - camera.y;
+        
         ctx.save();
         ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
         ctx.shadowBlur = SHADOW_BLUR;
@@ -412,7 +422,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Draw the main body
         ctx.fillStyle = player.color;
-        ctx.fillRect(player.x - camera.x, player.y - camera.y, player.width, player.height);
+        ctx.fillRect(playerScreenX, playerScreenY, player.width, player.height);
+        console.log('Drew player at:', playerScreenX, playerScreenY);
         
         // Draw float effect when moving upward and not touching ceiling
         if (player.velocityY < 0 && !player.isTouchingCeiling) {
@@ -421,8 +432,8 @@ document.addEventListener('DOMContentLoaded', function() {
             ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
             const glowHeight = Math.min(10, Math.abs(player.velocityY) * 2);
             ctx.fillRect(
-                player.x - camera.x,
-                player.y - camera.y + player.height,
+                playerScreenX,
+                playerScreenY + player.height,
                 player.width,
                 glowHeight
             );
@@ -433,17 +444,17 @@ document.addEventListener('DOMContentLoaded', function() {
         // Draw current thought with fade effect
         const thoughtOpacity = Math.min(1, (30 / player.thoughtTimer));
         ctx.fillStyle = `rgba(255, 255, 255, ${thoughtOpacity})`;
-        ctx.font = '20px Arial';
+        ctx.font = 'bold 20px Arial';  // Made text bold
         ctx.fillText(player.thoughts[player.currentChapter][player.currentThought], 20, 40);
 
         // Draw chapter indicator
         const chapters = ["Beginning", "Discovery", "Purpose", "Growth", "Enlightenment"];
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-        ctx.font = '16px Arial';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';  // Made text more visible
+        ctx.font = 'bold 16px Arial';  // Made text bold
         ctx.fillText(`Chapter: ${chapters[player.currentChapter]}`, 20, 70);
 
         // Draw controls with reduced opacity
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';  // Made controls more visible
         ctx.fillText('Left/Right Arrows to move, Hold SPACE to jump', 20, 95);
     }
 
@@ -459,6 +470,7 @@ document.addEventListener('DOMContentLoaded', function() {
     resizeCanvas();  // Initial resize
 
     // Start the game
+    console.log('Starting game');
     generateInitialPlatforms();
     gameLoop();
 }); 
