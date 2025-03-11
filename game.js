@@ -101,10 +101,10 @@ document.addEventListener('DOMContentLoaded', function() {
             score: 0,
             waterCans: 0,
             distanceFromFire: 300,
-            fireSpeed: 4,
-            fireAcceleration: 0.01,  // Increased for more noticeable movement
+            fireSpeed: 2,           // Reduced from 4 to 2
+            fireAcceleration: 0.005,  // Reduced from 0.01 to 0.005
             gameOver: false,
-            lastFireUpdate: Date.now()  // Initialize with current time
+            lastFireUpdate: Date.now()
         };
 
         // Platform decoration settings
@@ -116,16 +116,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Fire wall settings
         const FIRE = {
-            x: -300,
+            x: -canvas.width,      // Start at extreme left of screen
             width: 250,
             particles: [],
             maxParticles: 75,
             particleSize: { min: 10, max: 35 },
             particleSpeed: { min: 1.5, max: 4 },
             updateInterval: 16,
-            lastUpdate: Date.now(),  // Initialize with current time
-            baseSpeed: 4,
-            maxSpeed: 8
+            lastUpdate: Date.now(),
+            baseSpeed: 2,          // Reduced from 4 to 2
+            maxSpeed: 6           // Reduced from 8 to 6
         };
 
         // Sound effects
@@ -171,7 +171,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Player character
         const player = {
-            x: canvas.width * 0.1,
+            x: canvas.width * 0.5,  // Changed from 0.1 to 0.5 to start in center
             y: WORLD.height - 300,
             width: SPRITE.width * SPRITE.scale,
             height: SPRITE.height * SPRITE.scale,
@@ -329,7 +329,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (decoration.type === 'waterCan') {
                             GAME_STATE.waterCans++;
                             GAME_STATE.score += 10;
-                            FIRE.x -= DECORATION.waterCanValue; // Push fire back
+                            FIRE.x = -canvas.width;  // Reset fire to extreme left
+                            GAME_STATE.fireSpeed = FIRE.baseSpeed;  // Reset fire speed to base speed
                         }
                     }
                 }
@@ -410,9 +411,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     GAME_STATE.distanceFromFire = 300;
                     GAME_STATE.fireSpeed = FIRE.baseSpeed;
                     GAME_STATE.lastFireUpdate = Date.now();
-                    player.x = canvas.width * 0.1;
+                    player.x = canvas.width * 0.5;  // Reset to center
                     player.y = WORLD.height - 300;
-                    FIRE.x = -300;
+                    FIRE.x = -canvas.width;  // Reset to extreme left
                     platforms.length = 1; // Keep only ground
                     generateInitialPlatforms();
                     initFireParticles();
