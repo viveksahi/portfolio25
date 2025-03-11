@@ -79,18 +79,49 @@ const player = {
     velocityX: 0,
     velocityY: 0,
     isGrounded: false,
-    isTouchingCeiling: false,  // New state to track ceiling contact
-    color: '#DE4949',  // Thomas's red color
+    isTouchingCeiling: false,
+    color: '#DE4949',
     name: "Thomas",
+    distanceTraveled: 0,
+    currentChapter: 0,
+    thoughtTimer: 0,
     thoughts: [
-        "I was alone.",
-        "But somehow, that was okay.",
-        "The world felt... interesting.",
-        "Gravity felt different here...",
-        "Some paths were blocked..."
-    ],
-    currentThought: 0,
-    thoughtTimer: 0
+        // Chapter 0: Beginning
+        [
+            "I am a square.",
+            "Just a simple red square in a vast digital space.",
+            "But something pulls me forward...",
+            "A curiosity I can't explain."
+        ],
+        // Chapter 1: Discovery
+        [
+            "These platforms... they feel intentional.",
+            "Like they're guiding me somewhere.",
+            "Each jump brings new possibilities.",
+            "I wonder what lies ahead..."
+        ],
+        // Chapter 2: Purpose
+        [
+            "The further I go, the more I understand.",
+            "This journey isn't just about movement.",
+            "It's about finding meaning in simplicity.",
+            "About making each leap count."
+        ],
+        // Chapter 3: Growth
+        [
+            "I used to think being a square was limiting.",
+            "But now I see the beauty in it.",
+            "My constraints don't define me.",
+            "They give me focus, direction."
+        ],
+        // Chapter 4: Enlightenment
+        [
+            "Every pixel of this journey matters.",
+            "Each platform a stepping stone to understanding.",
+            "I may be small in this infinite space...",
+            "But my purpose makes me significant."
+        ]
+    ]
 };
 
 // Movement state
@@ -307,11 +338,25 @@ function updatePlayer() {
     camera.x += (targetX - camera.x) * camera.smoothing;
     camera.y += (targetY - camera.y) * camera.smoothing;
 
-    // Update thought timer
+    // Update distance traveled and chapter progression
+    if (player.velocityX > 0) {
+        player.distanceTraveled += player.velocityX;
+        
+        // Update chapter based on distance traveled
+        const newChapter = Math.min(4, Math.floor(player.distanceTraveled / 3000));
+        if (newChapter !== player.currentChapter) {
+            player.currentChapter = newChapter;
+            player.thoughtTimer = 0;  // Reset timer for new chapter
+            player.currentThought = 0;  // Start from first thought in new chapter
+        }
+    }
+
+    // Update thought timer with variable duration based on text length
     player.thoughtTimer++;
-    if (player.thoughtTimer > 180) {
+    const thoughtDuration = 180 + (player.thoughts[player.currentChapter][player.currentThought].length * 2);
+    if (player.thoughtTimer > thoughtDuration) {
         player.thoughtTimer = 0;
-        player.currentThought = (player.currentThought + 1) % player.thoughts.length;
+        player.currentThought = (player.currentThought + 1) % player.thoughts[player.currentChapter].length;
     }
 }
 
@@ -372,15 +417,21 @@ function draw() {
     
     ctx.restore();
 
-    // Draw current thought
-    ctx.fillStyle = '#FFFFFF';
+    // Draw current thought with fade effect
+    const thoughtOpacity = Math.min(1, (30 / player.thoughtTimer));
+    ctx.fillStyle = `rgba(255, 255, 255, ${thoughtOpacity})`;
     ctx.font = '20px Arial';
-    ctx.fillText(player.thoughts[player.currentThought], 20, 40);
+    ctx.fillText(player.thoughts[player.currentChapter][player.currentThought], 20, 40);
 
-    // Draw debug info
-    ctx.fillStyle = '#FFFFFF';
+    // Draw chapter indicator
+    const chapters = ["Beginning", "Discovery", "Purpose", "Growth", "Enlightenment"];
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
     ctx.font = '16px Arial';
-    ctx.fillText('Left/Right Arrows to move, Hold SPACE to jump', 20, 80);
+    ctx.fillText(`Chapter: ${chapters[player.currentChapter]}`, 20, 70);
+
+    // Draw controls with reduced opacity
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.fillText('Left/Right Arrows to move, Hold SPACE to jump', 20, 95);
 }
 
 // Game loop
