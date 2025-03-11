@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', function() {
         { x: 0, y: WORLD.height - WORLD.groundHeight, width: canvas.width * 3, height: WORLD.groundHeight, color: '#666666', isGround: true }
     ];
 
-    // Player character - Thomas
+    // Player character
     const player = {
         x: canvas.width * 0.1,
         y: WORLD.height - 300,
@@ -98,48 +98,7 @@ document.addEventListener('DOMContentLoaded', function() {
         velocityY: 0,
         isGrounded: false,
         isTouchingCeiling: false,
-        color: '#FF4949',  // Brighter red
-        name: "Thomas",
-        distanceTraveled: 0,
-        currentChapter: 0,
-        thoughtTimer: 0,
-        thoughts: [
-            // Chapter 0: Beginning
-            [
-                "I am a square.",
-                "Just a simple red square in a vast digital space.",
-                "But something pulls me forward...",
-                "A curiosity I can't explain."
-            ],
-            // Chapter 1: Discovery
-            [
-                "These platforms... they feel intentional.",
-                "Like they're guiding me somewhere.",
-                "Each jump brings new possibilities.",
-                "I wonder what lies ahead..."
-            ],
-            // Chapter 2: Purpose
-            [
-                "The further I go, the more I understand.",
-                "This journey isn't just about movement.",
-                "It's about finding meaning in simplicity.",
-                "About making each leap count."
-            ],
-            // Chapter 3: Growth
-            [
-                "I used to think being a square was limiting.",
-                "But now I see the beauty in it.",
-                "My constraints don't define me.",
-                "They give me focus, direction."
-            ],
-            // Chapter 4: Enlightenment
-            [
-                "Every pixel of this journey matters.",
-                "Each platform a stepping stone to understanding.",
-                "I may be small in this infinite space...",
-                "But my purpose makes me significant."
-            ]
-        ]
+        color: '#FF4949'  // Brighter red
     };
 
     // Movement state
@@ -355,43 +314,10 @@ document.addEventListener('DOMContentLoaded', function() {
         // Smooth camera movement
         camera.x += (targetX - camera.x) * camera.smoothing;
         camera.y += (targetY - camera.y) * camera.smoothing;
-
-        // Update distance traveled and chapter progression
-        if (player.velocityX > 0) {
-            player.distanceTraveled += player.velocityX;
-            
-            // Update chapter based on distance traveled
-            const newChapter = Math.min(4, Math.floor(player.distanceTraveled / 3000));
-            if (newChapter !== player.currentChapter) {
-                player.currentChapter = newChapter;
-                player.thoughtTimer = 0;  // Reset timer for new chapter
-                player.currentThought = 0;  // Start from first thought in new chapter
-            }
-        }
-
-        // Update thought timer with variable duration based on text length
-        player.thoughtTimer++;
-        if (player.currentChapter >= 0 && 
-            player.currentChapter < player.thoughts.length && 
-            player.currentThought >= 0 && 
-            player.currentThought < player.thoughts[player.currentChapter].length) {
-            
-            const thoughtDuration = 180 + (player.thoughts[player.currentChapter][player.currentThought].length * 2);
-            if (player.thoughtTimer > thoughtDuration) {
-                player.thoughtTimer = 0;
-                player.currentThought = (player.currentThought + 1) % player.thoughts[player.currentChapter].length;
-            }
-        } else {
-            // Reset thought state if invalid
-            player.currentChapter = 0;
-            player.currentThought = 0;
-            player.thoughtTimer = 0;
-        }
     }
 
     // Draw game
     function draw() {
-        console.log('Drawing frame');
         // Clear canvas with a lighter background
         ctx.fillStyle = '#2C2C2C';  // Slightly lighter background
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -415,13 +341,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 ctx.fillStyle = platform.color;
                 ctx.fillRect(screenX, screenY, platform.width, platform.height);
-                console.log('Drew platform at:', screenX, screenY);
                 
                 ctx.restore();
             }
         });
 
-        // Draw player (Thomas) with shadow and float effect
+        // Draw player with shadow and float effect
         const playerScreenX = player.x - camera.x;
         const playerScreenY = player.y - camera.y;
         
@@ -434,7 +359,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // Draw the main body
         ctx.fillStyle = player.color;
         ctx.fillRect(playerScreenX, playerScreenY, player.width, player.height);
-        console.log('Drew player at:', playerScreenX, playerScreenY);
         
         // Draw float effect when moving upward and not touching ceiling
         if (player.velocityY < 0 && !player.isTouchingCeiling) {
@@ -452,28 +376,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         ctx.restore();
 
-        // Draw current thought with fade effect
-        const thoughtOpacity = Math.min(1, (30 / player.thoughtTimer));
-        ctx.fillStyle = `rgba(255, 255, 255, ${thoughtOpacity})`;
-        ctx.font = 'bold 20px Arial';
-        if (player.currentChapter >= 0 && 
-            player.currentChapter < player.thoughts.length && 
-            player.currentThought >= 0 && 
-            player.currentThought < player.thoughts[player.currentChapter].length) {
-            ctx.fillText(player.thoughts[player.currentChapter][player.currentThought], 20, 40);
-        }
-
-        // Draw chapter indicator
-        const chapters = ["Beginning", "Discovery", "Purpose", "Growth", "Enlightenment"];
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        // Draw controls
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
         ctx.font = 'bold 16px Arial';
-        if (player.currentChapter >= 0 && player.currentChapter < chapters.length) {
-            ctx.fillText(`Chapter: ${chapters[player.currentChapter]}`, 20, 70);
-        }
-
-        // Draw controls with reduced opacity
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';  // Made controls more visible
-        ctx.fillText('Left/Right Arrows to move, Hold SPACE to jump', 20, 95);
+        ctx.fillText('Left/Right Arrows to move, Hold SPACE to jump', 20, 40);
     }
 
     // Game loop
