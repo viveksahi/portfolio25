@@ -22,8 +22,15 @@ const TERMINAL_VELOCITY = 8;  // Reduced terminal velocity for slower falls
 
 // Game world settings
 const WORLD = {
-    width: canvas.width * 3,
+    width: Infinity,  // Allow infinite horizontal movement
     height: canvas.height * 2,
+    platformGenerationDistance: canvas.width * 2,  // Generate platforms when player is this far from last platform
+    cleanupDistance: canvas.width * 4,  // Remove platforms this far behind the player
+    lastPlatformX: 0,  // Track the last platform's X position
+    minPlatformSpacing: 150,  // Minimum space between platforms
+    maxPlatformSpacing: 300,  // Maximum space between platforms
+    platformWidthRange: { min: 150, max: 250 },  // Random platform width range
+    platformHeightRange: { min: 20, max: 20 }  // Platform height (keeping consistent for now)
 };
 
 // Camera settings
@@ -41,21 +48,10 @@ const camera = {
 const SHADOW_OFFSET = 8;
 const SHADOW_BLUR = 15;
 
-// Platforms - positioned relative to screen size with adjusted heights
+// Initial platforms
 const platforms = [
-    // Ground
-    { x: 0, y: WORLD.height - 40, width: WORLD.width, height: 40, color: '#333333' },
-    // Starting platforms - heights reduced and more evenly spaced
-    { x: canvas.width * 0.2, y: WORLD.height - 120, width: 200, height: 20, color: '#333333' },
-    { x: canvas.width * 0.6, y: WORLD.height - 180, width: 200, height: 20, color: '#333333' },
-    { x: canvas.width * 1.0, y: WORLD.height - 240, width: 200, height: 20, color: '#333333' },
-    { x: canvas.width * 1.4, y: WORLD.height - 180, width: 200, height: 20, color: '#333333' },
-    { x: canvas.width * 1.8, y: WORLD.height - 120, width: 200, height: 20, color: '#333333' },
-    // Higher platforms - heights reduced and more evenly spaced
-    { x: canvas.width * 0.4, y: WORLD.height - 300, width: 150, height: 20, color: '#333333' },
-    { x: canvas.width * 0.8, y: WORLD.height - 360, width: 150, height: 20, color: '#333333' },
-    { x: canvas.width * 1.2, y: WORLD.height - 300, width: 150, height: 20, color: '#333333' },
-    { x: canvas.width * 1.6, y: WORLD.height - 240, width: 150, height: 20, color: '#333333' }
+    // Ground is special - it moves with the player
+    { x: 0, y: WORLD.height - 40, width: canvas.width * 2, height: 40, color: '#333333', isGround: true }
 ];
 
 // Player character - Thomas
@@ -111,6 +107,81 @@ function checkCollision(rect1, rect2) {
            rect1.x + rect1.width > rect2.x &&
            rect1.y < rect2.y + rect2.height &&
            rect1.y + rect1.height > rect2.y;
+}
+
+// Generate initial set of platforms
+function generateInitialPlatforms() {
+    // Starting platforms
+    const initialPlatforms = [
+        { x: canvas.width * 0.2, y: WORLD.height - 120 },
+        { x: canvas.width * 0.6, y: WORLD.height - 180 },
+        { x: canvas.width * 1.0, y: WORLD.height - 240 },
+        { x: canvas.width * 1.4, y: WORLD.height - 180 },
+        { x: canvas.width * 1.8, y: WORLD.height - 120 }
+    ];
+
+    initialPlatforms.forEach(platform => {
+        platforms.push({
+            x: platform.x,
+            y: platform.y,
+            width: 200,
+            height: 20,
+            color: '#333333',
+            isGround: false
+        });
+    });
+
+    WORLD.lastPlatformX = Math.max(...platforms.map(p => p.x + p.width));
+}
+
+// Generate a new platform
+function generatePlatform() {
+    const spacing = WORLD.minPlatformSpacing + 
+                   Math.random() * (WORLD.maxPlatformSpacing - WORLD.minPlatformSpacing);
+    
+    const x = WORLD.lastPlatformX + spacing;
+    const width = WORLD.platformWidthRange.min + 
+                 Math.random() * (WORLD.platformWidthRange.max - WORLD.platformWidthRange.min);
+    
+    // Create varying heights but ensure they're reachable
+    const minY = WORLD.height - 360;  // Highest point
+    const maxY = WORLD.height - 120;  // Lowest point
+    const y = minY + Math.random() * (maxY - minY);
+    
+    const platform = {
+        x: x,
+        y: y,
+        width: width,
+        height: WORLD.platformHeightRange.min,
+        color: '#333333',
+        isGround: false
+    };
+
+    platforms.push(platform);
+    WORLD.lastPlatformX = x + width;
+}
+
+// Update game world
+function updateWorld() {
+    // Update ground position to follow player
+    const ground = platforms.find(p => p.isGround);
+    if (ground) {
+        ground.x = Math.floor(player.x / canvas.width) * canvas.width;
+    }
+
+    // Generate new platforms if needed
+    while (WORLD.lastPlatformX - player.x < WORLD.platformGenerationDistance) {
+        generatePlatform();
+    }
+
+    // Remove platforms that are far behind the player
+    const cleanupX = player.x - WORLD.cleanupDistance;
+    for (let i = platforms.length - 1; i >= 0; i--) {
+        const platform = platforms[i];
+        if (!platform.isGround && platform.x + platform.width < cleanupX) {
+            platforms.splice(i, 1);
+        }
+    }
 }
 
 // Update player position and physics
@@ -186,6 +257,9 @@ function updatePlayer() {
             }
         }
     });
+
+    // Update world after player position is updated
+    updateWorld();
 
     // Update camera with smoother following and vertical deadzone
     const targetX = Math.max(0, Math.min(player.x - canvas.width / 2, WORLD.width - canvas.width));
@@ -288,4 +362,5 @@ function gameLoop() {
 }
 
 // Start the game
+generateInitialPlatforms();
 gameLoop(); 
