@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Sound effects
     const SOUNDS = {
-        waterSplash: new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2DgHlxdH2Df3Nze4N/d3R2fYGAenN1fYGBeHR3foGBfHh5f4GBfXl6gYKBfHh6gYODfXh4gYSGgHh2fYOHh4B4dnyDiYqDd3N5foWLjId7dXZ+hYyPjIZ5cXR9iJGTjoZ2bnF6i5WXk4t5bG53hpOYmJWJeW5udHyIj5OVk4yCdXFydHqBiY+UlZOOhXt1cXJ0eX+FjZKWl5WQhnt1cHFydHl+hYuRlpiYlY+Ee3VwcXJ0eH2DiY+Ul5iYlpCGfHZwcXJ0d3t/ho2Sk5WXl5WQiH52cXFydHd6fYSLkZOVlpeWkYl+d3JycnR2eXyCiY+Sk5SVlZSSin94c3JydHZ4e4GIjpGTlJWVk5GKgHhzcnJ0dnd6gIeNkJKTlJSTkouAeXRycnR2d3l/ho2QkZKTk5KRi4F6dHJydHZ3eX6Fi46QkZKSkZCLgnt1c3N0dnd5fYSLjY+QkZGQj4uCe3Vzc3R2d3l9g4uOj5CQkI+OioJ8dnNzdHZ3eX2Cio2Oj4+Pj46Lg3x2c3N0dnd5fIGJjY6Oj4+OjYuDfXdzc3R2d3h8gYmMjY6Ojo2Mi4N9d3RzdHZ3eHuAiIyNjY2NjYyLhH13dHN0dnd4e4CHi4yNjY2MjIqEfnd0c3R2d3h7gIeLjI2NjYyLioR+d3RzdHZ3eHqAh4qMjI2NjIuKhH53dHR0dnd4eoCHioyMjIyMi4qEfnd0dHR2d3h6gIaKjIyMjIyLioV+eHR0dHZ3eHqAhoqLjIyMjIuKhX54dHR0dnd4eoCGiouMjIyLi4qFfnh1dHR2d3h6f4aKi4yMjIuLioV+eHV0dHZ3eHp/hoqLi4yMi4uKhX54dXR0dnd4eoCGiouMjIyLi4qFfnh1dHR2d3h6f4aKi4uMjIuLioV+eHV0dHZ3eHp/hoqLi4yMi4uKhX54dXV1dnd4en+GiouLjIyLi4qGfnh1dXV2d3h6f4aKi4uMjIuLioZ+eXV1dXZ3eHp/hoqLi4yMi4uKhn55dXV1d3h4en+GiouLjIyLi4qGfnl1dXV3eHh6f4aKi4uMjIuLioZ+eXV1dXd4eHp/hoqLi4yMi4uKhn55dXV1d3h4en+GiouLjIyLi4qGfnl2dXV3eHh6f4aKi4uMjIuLioZ+eXZ2dXd4eHp/hoqLi4yMi4uKhn55dnZ1d3h4en+GiouLjIyLi4qGfnl2dnV3eHh6f4aKi4uMjIuLioZ+eXZ2dXd4eHp/hoqLi4yMi4uKhn55dnZ1d3h4en+GiouLjIyLi4qGfnl2dnV3eHh6f4aKi4uMjIuLioZ+eXZ2dXd4eHp/hoqLi4yMi4uKhn55dnZ1d3h4en+GiouLjIyLi4qGfnl2dnV3eHh6f4aKi4uMjIuLioZ+eXZ2')  // Water splash sound
+        waterSplash: new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2DgHlxdH2Df3Nze4N/d3R2fYGAenN1fYGBeHR3foGBfHh5f4GBfXl6gYKBfHh6gYODfXh4gYSGgHh2fYOHh4B4dnyDiYqDd3N5foWLjId7dXZ+hYyPjIZ5cXR9iJGTjoZ2bnF6i5WXk4t5bG53hpOYmJWJeW5udHyIj5OVk4yCdXFydHqBiY+UlZOOhXt1cXJ0eX+FjZKWl5WQhnt1cHFydHl+hYuRlpiYlY+Ee3VwcXJ0eH2DiY+Ul5iYlpCGfHZwcXJ0d3t/ho2Sk5WXl5WQiH52cXFydHd6fYSLkZOVlpeWkYl+d3JycnR2eXyCiY+Sk5SVlZSSin94c3JydHZ4e4GIjpGTlJWVk5GKgHhzcnJ0dnd6gIeNkJKTlJSTkouAeXRycnR2d3l/ho2QkZKTk5KRi4F6dHJydHZ3eX6Fi46QkZKSkZCLgnt1c3N0dnd5fYSLjY+QkZGQj4uCe3Vzc3R2d3l9g4uOj5CQkI+OioJ8dnNzdHZ3eX2Cio2Oj4+Pj46Lg3x2c3N0dnd5fIGJjY6Oj4+OjYuDfXdzc3R2d3h8gYmMjY6Ojo2Mi4N9d3RzdHZ3eHuAiIyNjY2NjYyLhH13dHN0dnd4e4CHi4yNjY2MjIqEfnd0c3R2d3h7gIeLjI2NjYyLioR+d3RzdHZ3eHqAh4qMjI2NjIuKhH53dHR0dnd4eoCHioyMjIyMi4qEfnd0dHR2d3h6gIaKjIyMjIyLioV+eHR0dHZ3eHqAhoqLjIyMjIuKhX54dHR0dnd4eoCGiouMjIyLi4qFfnh1dHR2d3h6f4aKi4yMjIuLioV+eHV0dHZ3eHp/hoqLi4yMi4uKhX54dXR0dnd4eoCGiouMjIyLi4qFfnh1dHR2d3h6f4aKi4uMjIuLioV+eHV0dHZ3eHp/hoqLi4yMi4uKhX54dXV1dnd4en+GiouLjIyLi4qGfnh1dXV2d3h6f4aKi4uMjIuLioZ+eXV1dXZ3eHp/hoqLi4yMi4uKhn55dXV1d3h4en+GiouLjIyLi4qGfnl1dXV3eHh6f4aKi4uMjIuLioZ+eXV1dXd4eHp/hoqLi4yMi4uKhn55dXV1d3h4en+GiouLjIyLi4qGfnl2dXV3eHh6f4aKi4uMjIuLioZ+eXZ2dXd4eHp/hoqLi4yMi4uKhn55dnZ1d3h4en+GiouLjIyLi4qGfnl2dnV3eHh6f4aKi4uMjIuLioZ+eXZ2dXd4eHp/hoqLi4yMi4uKhn55dnZ1d3h4en+GiouLjIyLi4qGfnl2dnV3eHh6f4aKi4uMjIuLioZ+eXZ2dXd4eHp/hoqLi4yMi4uKhn55dnZ1d3h4en+GiouLjIyLi4qGfnl2dnV3eHh6f4aKi4uMjIuLioZ+eXZ2dXd4eHp/hoqLi4yMi4uKhn55dnZ1d3h4en+GiouLjIyLi4qGfnl2dnV3eHh6f4aKi4uMjIuLioZ+eXZ2')  // Water splash sound
     };
 
     // Configure sounds
@@ -591,35 +591,13 @@ document.addEventListener('DOMContentLoaded', function() {
             ctx.shadowOffsetX = 5;
             ctx.shadowOffsetY = 5;
             
-            // Draw player box with gradient
-            const gradient = ctx.createLinearGradient(
-                playerScreenX, 
-                playerScreenY, 
-                playerScreenX + player.width, 
-                playerScreenY + player.height
-            );
-            gradient.addColorStop(0, COLORS.player);
-            gradient.addColorStop(1, '#2266DD');  // Slightly darker shade for depth
-            
-            ctx.fillStyle = gradient;
-            ctx.fillRect(
-                playerScreenX,
-                playerScreenY,
-                player.width,
-                player.height
-            );
-            
-            // Add highlight effect
-            ctx.shadowColor = 'rgba(255, 255, 255, 0.2)';
-            ctx.shadowBlur = 5;
-            ctx.shadowOffsetX = -2;
-            ctx.shadowOffsetY = -2;
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-            ctx.fillRect(
-                playerScreenX + 2,
-                playerScreenY + 2,
-                player.width - 4,
-                player.height - 4
+            // Draw teddy bear emoji
+            ctx.font = `${player.height}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🧸', 
+                playerScreenX + player.width/2,
+                playerScreenY + player.height/2
             );
             
             ctx.restore();
