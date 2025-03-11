@@ -1,7 +1,21 @@
 // Wait for DOM to be fully loaded
 document.addEventListener('DOMContentLoaded', function() {
+    // Get canvas and context
     const canvas = document.getElementById('gameCanvas');
+    if (!canvas) {
+        console.error('Canvas element not found!');
+        return;
+    }
+
     const ctx = canvas.getContext('2d');
+    if (!ctx) {
+        console.error('Could not get canvas context!');
+        return;
+    }
+
+    // Set initial canvas size
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
     // Physics constants
     const GRAVITY = 0.3;
@@ -54,6 +68,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const ground = platforms.find(p => p.isGround);
         if (ground) {
             ground.y = WORLD.height - WORLD.groundHeight;
+            ground.width = canvas.width * 3;  // Update ground width on resize
         }
         
         // Ensure player stays within new bounds
@@ -440,8 +455,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Initial resize and add event listener for window resize
-    resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();  // Initial resize
 
     // Start the game
     generateInitialPlatforms();
