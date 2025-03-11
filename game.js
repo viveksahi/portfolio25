@@ -100,10 +100,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const GAME_STATE = {
             score: 0,
             waterCans: 0,
-            distanceFromFire: 500,  // Starting distance from fire
-            fireSpeed: 2,           // Base speed of fire
-            fireAcceleration: 0.001, // Fire speeds up over time
-            gameOver: false
+            distanceFromFire: 300,
+            fireSpeed: 4,
+            fireAcceleration: 0.01,  // Increased for more noticeable movement
+            gameOver: false,
+            lastFireUpdate: Date.now()  // Initialize with current time
         };
 
         // Platform decoration settings
@@ -115,20 +116,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Fire wall settings
         const FIRE = {
-            x: 0,
-            width: 200,
+            x: -300,
+            width: 250,
             particles: [],
-            maxParticles: 50,
-            particleSize: { min: 10, max: 30 },
-            particleSpeed: { min: 1, max: 3 },
-            updateInterval: 50,  // ms between particle updates
-            lastUpdate: 0
+            maxParticles: 75,
+            particleSize: { min: 10, max: 35 },
+            particleSpeed: { min: 1.5, max: 4 },
+            updateInterval: 16,
+            lastUpdate: Date.now(),  // Initialize with current time
+            baseSpeed: 4,
+            maxSpeed: 8
         };
 
         // Sound effects
         const SOUNDS = {
             coin: new Audio('data:audio/wav;base64,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qJrx4KOQjahZxWbcZgztj2c49nKmkId44S71j0c8eV9yDK6uPRzx5X18eDvjvQ6yKo9ZSS6l//8elePK/Lf//IInrOF/FvDoADYAGBMGb7FtErm5MXMlmPAJQVgWta7Zx2go+8xJ0UiCb8LHHdftWyLJE0QIAIsI+UbXu67dZMjmgDGCGl1H+vpF4NSDckSIkk7Vd+sxEhBQMRU8j/12UIRhzSaUdQ+rQU5kGeFxm+hb1oh6pWWmv3uvmReDl0UnvtapVaIzo1jZbf/pD6ElLqSX+rUmOQNpJFa/r+sa4e/pBlAABoAAAAA3CUgShLdGIxsY7AUABPRrgCABdDuQ5GC7DqPQCgbbJUAoRSUj+NIEig0YfyWUho1VBBBA//uQZB4ABZx5zfMakeAAAAmwAAAAF5F3P0w9GtAAACfAAAAAwLhMDmAYWMgVEG1U0FIGCBgXBXAtfMH10000EEEEEECUBYln03TTTdNBDZopopYvrTTdNa325mImNg3TTPV9q3pmY0xoO6bv3r00y+IDGid/9aaaZTGMuj9mpu9Mpio1dXrr5HERTZSmqU36A3CumzN/9Robv/Xx4v9ijkSRSNLQhAWumap82WRSBUqXStV/YcS+XVLnSS+WLDroqArFkMEsAS+eWmrUzrO0oEmE40RlMZ5+ODIkAyKAGUwZ3mVKmcamcJnMW26MRPgUw6j+LkhyHGVGYjSUUKNpuJUQoOIAyDvEyG8S5yfK6dhZc0Tx1KI/gviKL6qvvFs1+bWtaz58uUNnryq6kt5RzOCkPWlVqVX2a/EEBUdU1KrXLf40GoiiFXK///qpoiDXrOgqDR38JB0bw7SoL+ZB9o1RCkQjQ2CBYZKd/+VJxZRRZlqSkKiws0WFxUyCwsKiMy7hUVFhIaCrNQsKkTIsLivwKKigsj8XYlwt/WKi2N4d//uQRCSAAjURNIHpMZBGYiaQPSYyAAABLAAAAAAAACWAAAAApUF/Mg+0aohSIRobBAsMlO//Kk4soosy1JSFRYWaLC4qZBYWFRGZdwqKiwkNBVmoWFSJkWFxX4FFRQWR+LsS4W/rFRb/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////VEFHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAU291bmRib3kuZGUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMjAwNGh0dHA6Ly93d3cuc291bmRib3kuZGUAAAAAAAAAACU='),
-            emoji: new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2DgHlxdH2Df3Nze4N/d3R2fYGAenN1fYGBeHR3foGBfHh5f4GBfXl6gYKBfHh6gYODfXh4gYSGgHh2fYOHh4B4dnyDiYqDd3N5foWLjId7dXZ+hYyPjIZ5cXR9iJGTjoZ2bnF6i5WXk4t5bG53hpOYmJWJeW5udHyIj5OVk4yCdXFydHqBiY+UlZOOhXt1cXJ0eX+FjZKWl5WQhnt1cHFydHl+hYuRlpiYlY+Ee3VwcXJ0eH2DiY+Ul5iYlpCGfHZwcXJ0d3t/ho2Sk5WXl5WQiH52cXFydHd6fYSLkZOVlpeWkYl+d3JycnR2eXyCiY+Sk5SVlZSSin94c3JydHZ4e4GIjpGTlJWVk5GKgHhzcnJ0dnd6gIeNkJKTlJSTkouAeXRycnR2d3l/ho2QkZKTk5KRi4F6dHJydHZ3eX6Fi46QkZKSkZCLgnt1c3N0dnd5fYSLjY+QkZGQj4uCe3Vzc3R2d3l9g4uOj5CQkI+OioJ8dnNzdHZ3eX2Cio2Oj4+Pj46Lg3x2c3N0dnd5fIGJjY6Oj4+OjYuDfXdzc3R2d3h8gYmMjY6Ojo2Mi4N9d3RzdHZ3eHuAiIyNjY2NjYyLhH13dHN0dnd4e4CHi4yNjY2MjIqEfnd0c3R2d3h7gIeLjI2NjYyLioR+d3RzdHZ3eHqAh4qMjI2NjIuKhH53dHR0dnd4eoCHioyMjIyMi4qEfnd0dHR2d3h6gIaKjIyMjIyLioV+eHR0dHZ3eHqAhoqLjIyMjIuKhX54dHR0dnd4eoCGiouMjIyLi4qFfnh1dHR2d3h6f4aKi4yMjIuLioV+eHV0dHZ3eHp/hoqLi4yMi4uKhX54dXR0dnd4en+GiouLjIyLi4qFfnh1dHR2d3h6f4aKi4uMjIuLioV+eHV0dHZ3eHp/hoqLi4yMi4uKhX54dXV1dnd4en+GiouLjIyLi4qGfnh1dXV2d3h6f4aKi4uMjIuLioZ+eXV1dXZ3eHp/hoqLi4yMi4uKhn55dXV1d3h4en+GiouLjIyLi4qGfnl1dXV3eHh6f4aKi4uMjIuLioZ+eXV1dXd4eHp/hoqLi4yMi4uKhn55dXV1d3h4en+GiouLjIyLi4qGfnl2dXV3eHh6f4aKi4uMjIuLioZ+eXZ2dXd4eHp/hoqLi4yMi4uKhn55dnZ1d3h4en+GiouLjIyLi4qGfnl2dnV3eHh6f4aKi4uMjIuLioZ+eXZ2dXd4eHp/hoqLi4yMi4uKhn55dnZ1d3h4en+GiouLjIyLi4qGfnl2dnV3eHh6f4aKi4uMjIuLioZ+eXZ2dXd4eHp/hoqLi4yMi4uKhn55dnZ1d3h4en+GiouLjIyLi4qGfnl2dnV3eHh6f4aKi4uMjIuLioZ+eXZ2')
+            emoji: new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2DgHlxdH2Df3Nze4N/d3R2fYGAenN1fYGBeHR3foGBfHh5f4GBfXl6gYKBfHh6gYODfXh4gYSGgHh2fYOHh4B4dnyDiYqDd3N5foWLjId7dXZ+hYyPjIZ5cXR9iJGTjoZ2bnF6i5WXk4t5bG53hpOYmJWJeW5udHyIj5OVk4yCdXFydHqBiY+UlZOOhXt1cXJ0eX+FjZKWl5WQhnt1cHFydHl+hYuRlpiYlY+Ee3VwcXJ0eH2DiY+Ul5iYlpCGfHZwcXJ0d3t/ho2Sk5WXl5WQiH52cXFydHd6fYSLkZOVlpeWkYl+d3JycnR2eXyCiY+Sk5SVlZSSin94c3JydHZ4e4GIjpGTlJWVk5GKgHhzcnJ0dnd6gIeNkJKTlJSTkouAeXRycnR2d3l/ho2QkZKTk5KRi4F6dHJydHZ3eX6Fi46QkZKSkZCLgnt1c3N0dnd5fYSLjY+QkZGQj4uCe3Vzc3R2d3l9g4uOj5CQkI+OioJ8dnNzdHZ3eX2Cio2Oj4+Pj46Lg3x2c3N0dnd5fIGJjY6Oj4+OjYuDfXdzc3R2d3h8gYmMjY6Ojo2Mi4N9d3RzdHZ3eHuAiIyNjY2NjYyLhH13dHN0dnd4e4CHi4yNjY2MjIqEfnd0c3R2d3h7gIeLjI2NjYyLioR+d3RzdHZ3eHqAh4qMjI2NjIuKhH53dHR0dnd4eoCHioyMjIyMi4qEfnd0dHR2d3h6gIaKjIyMjIyLioV+eHR0dHZ3eHqAhoqLjIyMjIuKhX54dHR0dnd4eoCGiouMjIyLi4qFfnh1dHR2d3h6f4aKi4yMjIuLioV+eHV0dHZ3eHp/hoqLi4yMi4uKhX54dXR0dnd4eoCGiouMjIyLi4qFfnh1dHR2d3h6f4aKi4uMjIuLioV+eHV0dHZ3eHp/hoqLi4yMi4uKhX54dXV1dnd4en+GiouLjIyLi4qGfnh1dXV2d3h6f4aKi4uMjIuLioZ+eXV1dXZ3eHp/hoqLi4yMi4uKhn55dXV1d3h4en+GiouLjIyLi4qGfnl1dXV3eHh6f4aKi4uMjIuLioZ+eXV1dXd4eHp/hoqLi4yMi4uKhn55dXV1d3h4en+GiouLjIyLi4qGfnl2dXV3eHh6f4aKi4uMjIuLioZ+eXZ2dXd4eHp/hoqLi4yMi4uKhn55dnZ1d3h4en+GiouLjIyLi4qGfnl2dnV3eHh6f4aKi4uMjIuLioZ+eXZ2dXd4eHp/hoqLi4yMi4uKhn55dnZ1d3h4en+GiouLjIyLi4qGfnl2dnV3eHh6f4aKi4uMjIuLioZ+eXZ2dXd4eHp/hoqLi4yMi4uKhn55dnZ1d3h4en+GiouLjIyLi4qGfnl2dnV3eHh6f4aKi4uMjIuLioZ+eXZ2')
         };
 
         // Set canvas size to match viewport
@@ -404,13 +407,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     GAME_STATE.gameOver = false;
                     GAME_STATE.score = 0;
                     GAME_STATE.waterCans = 0;
-                    GAME_STATE.distanceFromFire = 500;
-                    GAME_STATE.fireSpeed = 2;
+                    GAME_STATE.distanceFromFire = 300;
+                    GAME_STATE.fireSpeed = FIRE.baseSpeed;
+                    GAME_STATE.lastFireUpdate = Date.now();
                     player.x = canvas.width * 0.1;
                     player.y = WORLD.height - 300;
-                    FIRE.x = 0;
+                    FIRE.x = -300;
                     platforms.length = 1; // Keep only ground
                     generateInitialPlatforms();
+                    initFireParticles();
                 }
                 return;
             }
@@ -523,7 +528,98 @@ document.addEventListener('DOMContentLoaded', function() {
             updatePlayerAnimation();
         }
 
-        // Draw game
+        // Update fire particles and position
+        function updateFire() {
+            const now = Date.now();
+            const delta = (now - GAME_STATE.lastFireUpdate) / 16; // Normalize to 60fps
+            
+            // Update fire wall position
+            if (!GAME_STATE.gameOver) {
+                // Accelerate fire speed
+                GAME_STATE.fireSpeed = Math.min(
+                    GAME_STATE.fireSpeed + GAME_STATE.fireAcceleration * delta,
+                    FIRE.maxSpeed
+                );
+                
+                // Move fire forward
+                FIRE.x += GAME_STATE.fireSpeed;
+                
+                // Update distance between player and fire
+                GAME_STATE.distanceFromFire = Math.max(0, player.x - (FIRE.x + FIRE.width));
+                
+                // Check if fire caught the player
+                if (GAME_STATE.distanceFromFire <= 0) {
+                    GAME_STATE.gameOver = true;
+                }
+            }
+            
+            GAME_STATE.lastFireUpdate = now;
+            
+            // Update particles
+            if (now - FIRE.lastUpdate > FIRE.updateInterval) {
+                FIRE.particles.forEach(particle => {
+                    particle.x += Math.cos(particle.angle) * particle.speed;
+                    particle.y += Math.sin(particle.angle) * particle.speed;
+                    
+                    // Reset particles that move too far
+                    if (particle.x > FIRE.width || particle.x < 0) {
+                        particle.x = Math.random() * FIRE.width;
+                    }
+                    if (particle.y > WORLD.height || particle.y < 0) {
+                        particle.y = Math.random() * WORLD.height;
+                    }
+                });
+                FIRE.lastUpdate = now;
+            }
+        }
+
+        // Draw player with shadow
+        function drawPlayer() {
+            const playerScreenX = player.x - camera.x;
+            const playerScreenY = player.y - camera.y;
+
+            // Draw player shadow
+            ctx.save();
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+            ctx.shadowBlur = 15;
+            ctx.shadowOffsetX = 5;
+            ctx.shadowOffsetY = 5;
+            
+            // Draw player box with gradient
+            const gradient = ctx.createLinearGradient(
+                playerScreenX, 
+                playerScreenY, 
+                playerScreenX + player.width, 
+                playerScreenY + player.height
+            );
+            gradient.addColorStop(0, COLORS.player);
+            gradient.addColorStop(1, '#2266DD');  // Slightly darker shade for depth
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(
+                playerScreenX,
+                playerScreenY,
+                player.width,
+                player.height
+            );
+            
+            // Add highlight effect
+            ctx.shadowColor = 'rgba(255, 255, 255, 0.2)';
+            ctx.shadowBlur = 5;
+            ctx.shadowOffsetX = -2;
+            ctx.shadowOffsetY = -2;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.fillRect(
+                playerScreenX + 2,
+                playerScreenY + 2,
+                player.width - 4,
+                player.height - 4
+            );
+            
+            ctx.restore();
+        }
+
+        // Modified draw function
         function draw() {
             // Clear canvas with background
             ctx.fillStyle = COLORS.background;
@@ -567,19 +663,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
 
-            // Draw player
-            const playerScreenX = player.x - camera.x;
-            const playerScreenY = player.y - camera.y;
-
-            ctx.save();
-            ctx.fillStyle = SPRITE.color;
-            ctx.fillRect(
-                playerScreenX,
-                playerScreenY,
-                player.width,
-                player.height
-            );
-            ctx.restore();
+            // Draw player with shadow effects
+            drawPlayer();
 
             // Draw UI
             drawUI();
@@ -657,9 +742,23 @@ document.addEventListener('DOMContentLoaded', function() {
             ctx.restore();
         }
 
+        // Initialize fire particles
+        function initFireParticles() {
+            for (let i = 0; i < FIRE.maxParticles; i++) {
+                FIRE.particles.push({
+                    x: Math.random() * FIRE.width,
+                    y: Math.random() * WORLD.height,
+                    size: FIRE.particleSize.min + Math.random() * (FIRE.particleSize.max - FIRE.particleSize.min),
+                    speed: FIRE.particleSpeed.min + Math.random() * (FIRE.particleSpeed.max - FIRE.particleSpeed.min),
+                    angle: Math.random() * Math.PI * 2
+                });
+            }
+        }
+
         // Game loop
         function gameLoop() {
             updatePlayer();
+            updateFire();  // Add fire update to game loop
             draw();
             requestAnimationFrame(gameLoop);
         }
@@ -671,6 +770,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Start the game
         console.log('Starting game');
         generateInitialPlatforms();
+        initFireParticles();
         gameLoop();
     }
-}); 
+});
