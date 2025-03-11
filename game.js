@@ -23,13 +23,13 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Canvas size set to:', canvas.width, 'x', canvas.height);
 
     // Physics constants
-    const GRAVITY = 0.25;
-    const JUMP_ACCELERATION = -0.4;
-    const MIN_JUMP_VELOCITY = -8;
-    const MOVE_SPEED = 8;
-    const AIR_CONTROL = 0.9;
-    const FRICTION = 0.80;
-    const TERMINAL_VELOCITY = 8;
+    const GRAVITY = 0.4;
+    const JUMP_ACCELERATION = -0.8;
+    const MIN_JUMP_VELOCITY = -12;
+    const MOVE_SPEED = 10;
+    const AIR_CONTROL = 0.95;
+    const FRICTION = 0.85;
+    const TERMINAL_VELOCITY = 12;
 
     // Shadow settings
     const SHADOW_OFFSET = 8;
@@ -42,8 +42,8 @@ document.addEventListener('DOMContentLoaded', function() {
         width: window.innerWidth,
         height: window.innerHeight,
         baseY: 0,
-        verticalDeadzone: 200,
-        smoothing: 0.1
+        verticalDeadzone: 150,
+        smoothing: 0.15
     };
 
     // Game world settings
@@ -53,12 +53,12 @@ document.addEventListener('DOMContentLoaded', function() {
         platformGenerationDistance: window.innerWidth * 3,
         cleanupDistance: window.innerWidth * 6,
         lastPlatformX: 0,
-        minPlatformSpacing: 200,
-        maxPlatformSpacing: 400,
-        platformWidthRange: { min: 150, max: 300 },
+        minPlatformSpacing: 180,
+        maxPlatformSpacing: 350,
+        platformWidthRange: { min: 120, max: 250 },
         platformHeightRange: { min: 20, max: 20 },
         groundHeight: 40,
-        minPlatformY: 100
+        minPlatformY: 120
     };
 
     // Set canvas size to match viewport
