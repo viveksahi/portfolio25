@@ -34,13 +34,13 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Canvas size set to:', canvas.width, 'x', canvas.height);
 
         // Physics constants
-        const GRAVITY = 0.35;              // Reduced from 0.5 for floatier jumps
-        const JUMP_ACCELERATION = -1.5;    // Increased from -1.2 for stronger jumps
-        const MIN_JUMP_VELOCITY = -12;     // Reduced from -15 for more controlled jumps
-        const MOVE_SPEED = 12;             // Reduced from 15 for more controlled movement
-        const AIR_CONTROL = 0.99;          // Increased from 0.98 for better air control
-        const FRICTION = 0.92;             // Increased from 0.90 for smoother movement
-        const TERMINAL_VELOCITY = 12;      // Reduced from 15 for more time to react
+        const GRAVITY = 0.35;              // Keep gravity the same for now
+        const JUMP_ACCELERATION = -1.05;   // Reduced from -1.5 (70%)
+        const MIN_JUMP_VELOCITY = -8.4;    // Reduced from -12 (70%)
+        const MOVE_SPEED = 8.4;            // Reduced from 12 (70%)
+        const AIR_CONTROL = 0.99;          // Keep air control the same
+        const FRICTION = 0.92;             // Keep friction the same
+        const TERMINAL_VELOCITY = 8.4;     // Reduced from 12 (70%)
 
         // Shadow settings
         const SHADOW_OFFSET = 8;
