@@ -13,7 +13,9 @@ window.addEventListener('resize', resizeCanvas);
 
 // Physics constants
 const GRAVITY = 0.4;
-const JUMP_FORCE = -10;
+const MIN_JUMP_FORCE = -10;
+const MAX_JUMP_FORCE = -18;
+const JUMP_CHARGE_RATE = 0.5;
 const MOVE_SPEED = 4;
 const FRICTION = 0.8;
 
@@ -61,12 +63,16 @@ const player = {
     velocityX: 0,
     velocityY: 0,
     isGrounded: false,
+    jumpCharge: 0,
+    isCharging: false,
     color: '#DE4949',  // Thomas's red color
     name: "Thomas",
     thoughts: [
         "I was alone.",
         "But somehow, that was okay.",
-        "The world felt... interesting."
+        "The world felt... interesting.",
+        "I discovered I could jump higher...",
+        "...if I focused my energy longer."
     ],
     currentThought: 0,
     thoughtTimer: 0
@@ -74,8 +80,6 @@ const player = {
 
 // Movement state
 const keys = {
-    ArrowUp: false,
-    ArrowDown: false,
     ArrowLeft: false,
     ArrowRight: false,
     Space: false
@@ -85,6 +89,9 @@ const keys = {
 window.addEventListener('keydown', (e) => {
     if (e.code === 'Space') {
         keys.Space = true;
+        if (player.isGrounded) {
+            player.isCharging = true;
+        }
     }
     if (keys.hasOwnProperty(e.key)) {
         keys[e.key] = true;
@@ -94,6 +101,13 @@ window.addEventListener('keydown', (e) => {
 window.addEventListener('keyup', (e) => {
     if (e.code === 'Space') {
         keys.Space = false;
+        if (player.isCharging) {
+            // Apply the charged jump
+            player.velocityY = Math.min(MAX_JUMP_FORCE, MIN_JUMP_FORCE - player.jumpCharge);
+            player.isGrounded = false;
+            player.isCharging = false;
+            player.jumpCharge = 0;
+        }
     }
     if (keys.hasOwnProperty(e.key)) {
         keys[e.key] = false;
@@ -119,13 +133,14 @@ function updatePlayer() {
         player.velocityX *= FRICTION;
     }
 
-    // Apply gravity
-    player.velocityY += GRAVITY;
+    // Handle jump charging
+    if (player.isCharging && player.isGrounded) {
+        player.jumpCharge = Math.min(player.jumpCharge + JUMP_CHARGE_RATE, Math.abs(MAX_JUMP_FORCE - MIN_JUMP_FORCE));
+    }
 
-    // Jump if grounded and space is pressed
-    if (player.isGrounded && (keys.ArrowUp || keys.Space)) {
-        player.velocityY = JUMP_FORCE;
-        player.isGrounded = false;
+    // Apply gravity if not charging
+    if (!player.isCharging) {
+        player.velocityY += GRAVITY;
     }
 
     // Update position
@@ -169,7 +184,7 @@ function updatePlayer() {
 
     // Update thought timer
     player.thoughtTimer++;
-    if (player.thoughtTimer > 180) { // Change thought every 3 seconds
+    if (player.thoughtTimer > 180) {
         player.thoughtTimer = 0;
         player.currentThought = (player.currentThought + 1) % player.thoughts.length;
     }
@@ -205,15 +220,28 @@ function draw() {
         }
     });
 
-    // Draw player (Thomas) with shadow
+    // Draw player (Thomas) with shadow and jump charge indicator
     ctx.save();
     ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
     ctx.shadowBlur = SHADOW_BLUR;
     ctx.shadowOffsetX = 0;
     ctx.shadowOffsetY = SHADOW_OFFSET;
     
+    // Draw the main body
     ctx.fillStyle = player.color;
     ctx.fillRect(player.x - camera.x, player.y - camera.y, player.width, player.height);
+    
+    // Draw jump charge indicator if charging
+    if (player.isCharging) {
+        const chargePercent = player.jumpCharge / (MAX_JUMP_FORCE - MIN_JUMP_FORCE);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.fillRect(
+            player.x - camera.x,
+            player.y - camera.y - 10,
+            player.width * chargePercent,
+            5
+        );
+    }
     
     ctx.restore();
 
@@ -225,7 +253,7 @@ function draw() {
     // Draw debug info
     ctx.fillStyle = '#FFFFFF';
     ctx.font = '16px Arial';
-    ctx.fillText('Use Arrow Keys or Space to move and jump', 20, 80);
+    ctx.fillText('Left/Right Arrows to move, Hold SPACE to charge jump', 20, 80);
 }
 
 // Game loop
