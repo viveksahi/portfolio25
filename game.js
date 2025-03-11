@@ -11,10 +11,16 @@ function resizeCanvas() {
 resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
 
+// Physics constants
+const GRAVITY = 0.5;
+const JUMP_FORCE = -12;
+const MOVE_SPEED = 5;
+const FRICTION = 0.8;
+
 // Game world settings
 const WORLD = {
-    width: canvas.width * 5,  // 5 times the screen width
-    height: canvas.height * 5, // 5 times the screen height
+    width: canvas.width * 3,
+    height: canvas.height * 2,
 };
 
 // Camera settings
@@ -25,33 +31,41 @@ const camera = {
     height: canvas.height
 };
 
-// Game objects - positioned relative to screen size for better scaling
-const gameObjects = [
-    // Trees
-    { type: 'tree', x: canvas.width * 0.2, y: canvas.height * 0.2, width: 40, height: 60, color: '#0B5345' },
-    { type: 'tree', x: canvas.width * 0.5, y: canvas.height * 0.3, width: 40, height: 60, color: '#0B5345' },
-    { type: 'tree', x: canvas.width * 1.2, y: canvas.height * 0.8, width: 40, height: 60, color: '#0B5345' },
-    { type: 'tree', x: canvas.width * 1.8, y: canvas.height * 0.5, width: 40, height: 60, color: '#0B5345' },
-    { type: 'tree', x: canvas.width * 2.2, y: canvas.height * 1.2, width: 40, height: 60, color: '#0B5345' },
-    // Huts
-    { type: 'hut', x: canvas.width * 0.8, y: canvas.height * 0.6, width: 80, height: 80, color: '#8B4513' },
-    { type: 'hut', x: canvas.width * 1.5, y: canvas.height * 0.9, width: 80, height: 80, color: '#8B4513' },
-    { type: 'hut', x: canvas.width * 2.5, y: canvas.height * 1.4, width: 80, height: 80, color: '#8B4513' },
-    // Rocks
-    { type: 'rock', x: canvas.width * 0.4, y: canvas.height * 0.5, width: 30, height: 30, color: '#707B7C' },
-    { type: 'rock', x: canvas.width * 1.3, y: canvas.height * 1.1, width: 30, height: 30, color: '#707B7C' },
-    { type: 'rock', x: canvas.width * 2.3, y: canvas.height * 0.7, width: 30, height: 30, color: '#707B7C' }
+// Platforms - positioned relative to screen size
+const platforms = [
+    // Ground
+    { x: 0, y: WORLD.height - 40, width: WORLD.width, height: 40, color: '#333333' },
+    // Starting platforms
+    { x: canvas.width * 0.2, y: WORLD.height - 200, width: 200, height: 20, color: '#333333' },
+    { x: canvas.width * 0.6, y: WORLD.height - 300, width: 200, height: 20, color: '#333333' },
+    { x: canvas.width * 1.0, y: WORLD.height - 400, width: 200, height: 20, color: '#333333' },
+    { x: canvas.width * 1.4, y: WORLD.height - 300, width: 200, height: 20, color: '#333333' },
+    { x: canvas.width * 1.8, y: WORLD.height - 200, width: 200, height: 20, color: '#333333' },
+    // Higher platforms
+    { x: canvas.width * 0.4, y: WORLD.height - 500, width: 150, height: 20, color: '#333333' },
+    { x: canvas.width * 0.8, y: WORLD.height - 600, width: 150, height: 20, color: '#333333' },
+    { x: canvas.width * 1.2, y: WORLD.height - 550, width: 150, height: 20, color: '#333333' },
+    { x: canvas.width * 1.6, y: WORLD.height - 450, width: 150, height: 20, color: '#333333' }
 ];
 
-// Player character - start near top-left corner
+// Player character - Thomas
 const player = {
-    x: canvas.width * 0.1,  // Start at 10% of screen width
-    y: canvas.height * 0.1, // Start at 10% of screen height
-    width: 32,
-    height: 32,
-    speed: 5,
-    direction: 'down',
-    moving: false
+    x: canvas.width * 0.1,
+    y: WORLD.height - 300,
+    width: 40,
+    height: 40,
+    velocityX: 0,
+    velocityY: 0,
+    isGrounded: false,
+    color: '#DE4949',  // Thomas's red color
+    name: "Thomas",
+    thoughts: [
+        "I was alone.",
+        "But somehow, that was okay.",
+        "The world felt... interesting."
+    ],
+    currentThought: 0,
+    thoughtTimer: 0
 };
 
 // Movement state
@@ -59,131 +73,138 @@ const keys = {
     ArrowUp: false,
     ArrowDown: false,
     ArrowLeft: false,
-    ArrowRight: false
+    ArrowRight: false,
+    Space: false
 };
-
-// Create character sprite
-const characterSprite = new Image();
-characterSprite.src = 'character.png';
 
 // Handle keyboard input
 window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
+        keys.Space = true;
+    }
     if (keys.hasOwnProperty(e.key)) {
         keys[e.key] = true;
-        player.moving = true;
     }
 });
 
 window.addEventListener('keyup', (e) => {
+    if (e.code === 'Space') {
+        keys.Space = false;
+    }
     if (keys.hasOwnProperty(e.key)) {
         keys[e.key] = false;
-        player.moving = false;
     }
 });
 
-// Update player position
+// Check collision between two rectangles
+function checkCollision(rect1, rect2) {
+    return rect1.x < rect2.x + rect2.width &&
+           rect1.x + rect1.width > rect2.x &&
+           rect1.y < rect2.y + rect2.height &&
+           rect1.y + rect1.height > rect2.y;
+}
+
+// Update player position and physics
 function updatePlayer() {
-    const nextPosition = { x: player.x, y: player.y };
-
-    if (keys.ArrowUp) {
-        nextPosition.y = Math.max(0, player.y - player.speed);
-        player.direction = 'up';
-    }
-    if (keys.ArrowDown) {
-        nextPosition.y = Math.min(WORLD.height - player.height, player.y + player.speed);
-        player.direction = 'down';
-    }
+    // Apply horizontal movement
     if (keys.ArrowLeft) {
-        nextPosition.x = Math.max(0, player.x - player.speed);
-        player.direction = 'left';
-    }
-    if (keys.ArrowRight) {
-        nextPosition.x = Math.min(WORLD.width - player.width, player.x + player.speed);
-        player.direction = 'right';
+        player.velocityX = -MOVE_SPEED;
+    } else if (keys.ArrowRight) {
+        player.velocityX = MOVE_SPEED;
+    } else {
+        player.velocityX *= FRICTION;
     }
 
-    // Check for collisions with game objects
-    const willCollide = gameObjects.some(obj => {
-        return (nextPosition.x < obj.x + obj.width &&
-                nextPosition.x + player.width > obj.x &&
-                nextPosition.y < obj.y + obj.height &&
-                nextPosition.y + player.height > obj.y);
+    // Apply gravity
+    player.velocityY += GRAVITY;
+
+    // Jump if grounded and space is pressed
+    if (player.isGrounded && (keys.ArrowUp || keys.Space)) {
+        player.velocityY = JUMP_FORCE;
+        player.isGrounded = false;
+    }
+
+    // Update position
+    player.x += player.velocityX;
+    player.y += player.velocityY;
+
+    // Check world boundaries
+    player.x = Math.max(0, Math.min(player.x, WORLD.width - player.width));
+
+    // Reset grounded state
+    player.isGrounded = false;
+
+    // Check platform collisions
+    platforms.forEach(platform => {
+        if (checkCollision(player, platform)) {
+            // Top collision (landing)
+            if (player.velocityY > 0 && player.y + player.height - player.velocityY <= platform.y) {
+                player.y = platform.y - player.height;
+                player.velocityY = 0;
+                player.isGrounded = true;
+            }
+            // Bottom collision (hitting head)
+            else if (player.velocityY < 0 && player.y >= platform.y + platform.height) {
+                player.y = platform.y + platform.height;
+                player.velocityY = 0;
+            }
+            // Side collisions
+            else if (player.velocityX > 0) {
+                player.x = platform.x - player.width;
+                player.velocityX = 0;
+            } else if (player.velocityX < 0) {
+                player.x = platform.x + platform.width;
+                player.velocityX = 0;
+            }
+        }
     });
-
-    if (!willCollide) {
-        player.x = nextPosition.x;
-        player.y = nextPosition.y;
-    }
 
     // Update camera to follow player
     camera.x = Math.max(0, Math.min(player.x - canvas.width / 2, WORLD.width - canvas.width));
     camera.y = Math.max(0, Math.min(player.y - canvas.height / 2, WORLD.height - canvas.height));
-}
 
-// Draw game objects
-function drawObject(obj) {
-    const screenX = obj.x - camera.x;
-    const screenY = obj.y - camera.y;
-    
-    // Only draw if object is visible on screen
-    if (screenX + obj.width >= 0 && 
-        screenX <= canvas.width && 
-        screenY + obj.height >= 0 && 
-        screenY <= canvas.height) {
-        
-        ctx.fillStyle = obj.color;
-        
-        if (obj.type === 'tree') {
-            // Draw tree trunk
-            ctx.fillStyle = '#5D4037';
-            ctx.fillRect(screenX + obj.width/4, screenY + obj.height/2, obj.width/2, obj.height/2);
-            // Draw tree top
-            ctx.fillStyle = obj.color;
-            ctx.beginPath();
-            ctx.moveTo(screenX, screenY + obj.height/2);
-            ctx.lineTo(screenX + obj.width/2, screenY);
-            ctx.lineTo(screenX + obj.width, screenY + obj.height/2);
-            ctx.fill();
-        } else if (obj.type === 'hut') {
-            // Draw hut body
-            ctx.fillRect(screenX, screenY + obj.height/3, obj.width, obj.height * 2/3);
-            // Draw roof
-            ctx.beginPath();
-            ctx.moveTo(screenX - 10, screenY + obj.height/3);
-            ctx.lineTo(screenX + obj.width/2, screenY);
-            ctx.lineTo(screenX + obj.width + 10, screenY + obj.height/3);
-            ctx.fillStyle = '#8B4513';
-            ctx.fill();
-        } else {
-            ctx.fillRect(screenX, screenY, obj.width, obj.height);
-        }
+    // Update thought timer
+    player.thoughtTimer++;
+    if (player.thoughtTimer > 180) { // Change thought every 3 seconds
+        player.thoughtTimer = 0;
+        player.currentThought = (player.currentThought + 1) % player.thoughts.length;
     }
 }
 
 // Draw game
 function draw() {
-    // Clear canvas
-    ctx.fillStyle = '#7CAA2D';  // Retro green background
+    // Clear canvas with a dark background
+    ctx.fillStyle = '#1C1C1C';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Draw all game objects
-    gameObjects.forEach(drawObject);
+    // Draw platforms
+    platforms.forEach(platform => {
+        const screenX = platform.x - camera.x;
+        const screenY = platform.y - camera.y;
+        
+        if (screenX + platform.width >= 0 && 
+            screenX <= canvas.width && 
+            screenY + platform.height >= 0 && 
+            screenY <= canvas.height) {
+            
+            ctx.fillStyle = platform.color;
+            ctx.fillRect(screenX, screenY, platform.width, platform.height);
+        }
+    });
 
-    // Draw player character relative to camera
-    ctx.fillStyle = '#000000';
+    // Draw player (Thomas)
+    ctx.fillStyle = player.color;
     ctx.fillRect(player.x - camera.x, player.y - camera.y, player.width, player.height);
 
-    // Draw world boundaries
-    ctx.strokeStyle = '#000000';
-    ctx.lineWidth = 4;
-    ctx.strokeRect(-camera.x, -camera.y, WORLD.width, WORLD.height);
+    // Draw current thought
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '20px Arial';
+    ctx.fillText(player.thoughts[player.currentThought], 20, 40);
 
     // Draw debug info
-    ctx.fillStyle = '#000000';
+    ctx.fillStyle = '#FFFFFF';
     ctx.font = '16px Arial';
-    ctx.fillText(`Player: (${Math.round(player.x)}, ${Math.round(player.y)})`, 10, 20);
-    ctx.fillText(`Camera: (${Math.round(camera.x)}, ${Math.round(camera.y)})`, 10, 40);
-    ctx.fillText('Use arrow keys to move', 10, 60);
+    ctx.fillText('Use Arrow Keys or Space to move and jump', 20, 80);
 }
 
 // Game loop
