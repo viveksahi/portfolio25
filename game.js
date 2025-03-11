@@ -35,6 +35,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const SHADOW_OFFSET = 8;
     const SHADOW_BLUR = 15;
 
+    // Visual settings
+    const COLORS = {
+        background: '#1E1E2E',      // Darker background
+        platform: '#4A4A5E',        // Lighter platform color
+        ground: '#5D5D7D',          // Lighter ground color
+        player: '#FF5D5D',          // Brighter player color
+        coin: '#FFD700',            // Bright gold
+        uiBackground: 'rgba(0, 0, 0, 0.8)',  // Darker UI background
+        uiText: '#FFFFFF'           // White text
+    };
+
     // Camera settings
     const camera = {
         x: 0,
@@ -113,7 +124,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initial platforms
     const platforms = [
         // Ground is special - it moves with the player and is wider than the screen
-        { x: 0, y: WORLD.height - WORLD.groundHeight, width: canvas.width * 3, height: WORLD.groundHeight, color: '#666666', isGround: true }
+        { x: 0, y: WORLD.height - WORLD.groundHeight, width: canvas.width * 3, height: WORLD.groundHeight, color: '#666666', isGround: true, decorations: [] }
     ];
 
     // Player character
@@ -173,14 +184,43 @@ document.addEventListener('DOMContentLoaded', function() {
         ];
 
         initialPlatforms.forEach(platform => {
-            platforms.push({
+            const newPlatform = {
                 x: platform.x,
                 y: platform.y,
                 width: 200,
                 height: 20,
                 color: '#333333',
-                isGround: false
-            });
+                isGround: false,
+                decorations: []
+            };
+
+            // Add emoji with 30% chance
+            if (Math.random() < DECORATION.emojiChance) {
+                const randomEmotion = GAME_STATE.emotions[Math.floor(Math.random() * GAME_STATE.emotions.length)];
+                newPlatform.decorations.push({
+                    type: 'emoji',
+                    x: newPlatform.width / 2 - DECORATION.emojiSize / 2,
+                    y: -DECORATION.emojiSize,
+                    width: DECORATION.emojiSize,
+                    height: DECORATION.emojiSize,
+                    content: randomEmotion.emoji,
+                    collected: false
+                });
+            }
+
+            // Add coin with 40% chance
+            if (Math.random() < DECORATION.coinChance) {
+                newPlatform.decorations.push({
+                    type: 'coin',
+                    x: newPlatform.width / 3,
+                    y: -DECORATION.coinSize,
+                    width: DECORATION.coinSize,
+                    height: DECORATION.coinSize,
+                    collected: false
+                });
+            }
+
+            platforms.push(newPlatform);
         });
 
         WORLD.lastPlatformX = Math.max(...platforms.map(p => p.x + p.width));
@@ -204,7 +244,7 @@ document.addEventListener('DOMContentLoaded', function() {
             y: y,
             width: width,
             height: WORLD.platformHeightRange.min,
-            color: '#333333',
+            color: COLORS.platform,
             isGround: false,
             decorations: []
         };
@@ -405,8 +445,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Draw game
     function draw() {
-        // Clear canvas with a lighter background
-        ctx.fillStyle = '#2C2C2C';  // Slightly lighter background
+        // Clear canvas with background
+        ctx.fillStyle = COLORS.background;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         // Draw platforms with shadows
@@ -426,31 +466,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 ctx.shadowOffsetX = 0;
                 ctx.shadowOffsetY = SHADOW_OFFSET;
                 
-                ctx.fillStyle = platform.color;
-                ctx.fillRect(screenX, screenY, platform.width, platform.height);
-                
-                ctx.restore();
-            }
-        });
-
-        // Draw platforms and their decorations
-        platforms.forEach(platform => {
-            const screenX = platform.x - camera.x;
-            const screenY = platform.y - camera.y;
-            
-            if (screenX + platform.width >= 0 && 
-                screenX <= canvas.width && 
-                screenY + platform.height >= 0 && 
-                screenY <= canvas.height) {
-                
-                // Draw platform
-                ctx.save();
-                ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-                ctx.shadowBlur = SHADOW_BLUR;
-                ctx.shadowOffsetX = 0;
-                ctx.shadowOffsetY = SHADOW_OFFSET;
-                
-                ctx.fillStyle = platform.color;
+                ctx.fillStyle = platform.isGround ? COLORS.ground : COLORS.platform;
                 ctx.fillRect(screenX, screenY, platform.width, platform.height);
                 
                 ctx.restore();
@@ -462,9 +478,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         const decorationY = screenY + decoration.y;
 
                         if (decoration.type === 'coin') {
-                            // Draw coin
+                            // Draw coin with glow
                             ctx.save();
-                            ctx.fillStyle = '#FFD700';
+                            ctx.shadowColor = COLORS.coin;
+                            ctx.shadowBlur = 15;
+                            ctx.fillStyle = COLORS.coin;
                             ctx.beginPath();
                             ctx.arc(
                                 decorationX + decoration.width/2,
@@ -476,8 +494,10 @@ document.addEventListener('DOMContentLoaded', function() {
                             ctx.fill();
                             ctx.restore();
                         } else if (decoration.type === 'emoji') {
-                            // Draw emoji
+                            // Draw emoji with glow
                             ctx.save();
+                            ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
+                            ctx.shadowBlur = 10;
                             ctx.font = `${decoration.height}px Arial`;
                             ctx.textAlign = 'center';
                             ctx.textBaseline = 'middle';
@@ -493,26 +513,26 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Draw player with shadow and float effect
+        // Draw player with enhanced shadow and glow
         const playerScreenX = player.x - camera.x;
         const playerScreenY = player.y - camera.y;
         
         ctx.save();
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-        ctx.shadowBlur = SHADOW_BLUR;
+        ctx.shadowColor = 'rgba(255, 93, 93, 0.6)';  // Player color shadow
+        ctx.shadowBlur = SHADOW_BLUR * 1.5;
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = SHADOW_OFFSET;
         
         // Draw the main body
-        ctx.fillStyle = player.color;
+        ctx.fillStyle = COLORS.player;
         ctx.fillRect(playerScreenX, playerScreenY, player.width, player.height);
         
-        // Draw float effect when moving upward and not touching ceiling
+        // Draw float effect when moving upward
         if (player.velocityY < 0 && !player.isTouchingCeiling) {
-            ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
-            ctx.shadowBlur = 20;
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-            const glowHeight = Math.min(10, Math.abs(player.velocityY) * 2);
+            ctx.shadowColor = 'rgba(255, 255, 255, 0.7)';
+            ctx.shadowBlur = 25;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            const glowHeight = Math.min(15, Math.abs(player.velocityY) * 2);
             ctx.fillRect(
                 playerScreenX,
                 playerScreenY + player.height,
@@ -523,25 +543,27 @@ document.addEventListener('DOMContentLoaded', function() {
         
         ctx.restore();
 
-        // Draw UI
+        // Draw UI with enhanced visibility
         ctx.save();
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillStyle = COLORS.uiBackground;
         ctx.fillRect(0, 0, canvas.width, 60);
         
         // Draw current emotion and feeling
         ctx.font = 'bold 20px Arial';
-        ctx.fillStyle = 'white';
+        ctx.fillStyle = COLORS.uiText;
         ctx.textAlign = 'left';
         ctx.fillText(`${GAME_STATE.currentEmotion} ${GAME_STATE.currentFeeling}`, 20, 35);
         
-        // Draw score
+        // Draw score with glow
+        ctx.shadowColor = COLORS.coin;
+        ctx.shadowBlur = 10;
         ctx.textAlign = 'right';
         ctx.fillText(`Score: ${GAME_STATE.score}`, canvas.width - 20, 35);
         
         ctx.restore();
 
-        // Draw controls
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        // Draw controls with better visibility
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
         ctx.font = 'bold 16px Arial';
         ctx.textAlign = 'left';
         ctx.fillText('Left/Right Arrows to move, Hold SPACE to jump', 20, 80);
