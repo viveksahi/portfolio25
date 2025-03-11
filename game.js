@@ -12,11 +12,13 @@ resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
 
 // Physics constants
-const GRAVITY = 0.4;
-const JUMP_FORCE = -8;  // Constant upward force while space is held
+const GRAVITY = 0.3;  // Reduced gravity for floatier feel
+const JUMP_ACCELERATION = -0.5;  // Gradual upward acceleration while space held
+const MIN_JUMP_VELOCITY = -6;  // Cap on upward speed
 const MOVE_SPEED = 4;
+const AIR_CONTROL = 0.85;  // Better air control
 const FRICTION = 0.8;
-const TERMINAL_VELOCITY = 12;  // Maximum fall speed
+const TERMINAL_VELOCITY = 8;  // Reduced terminal velocity for slower falls
 
 // Game world settings
 const WORLD = {
@@ -62,15 +64,14 @@ const player = {
     velocityX: 0,
     velocityY: 0,
     isGrounded: false,
-    isJumping: false,
     color: '#DE4949',  // Thomas's red color
     name: "Thomas",
     thoughts: [
         "I was alone.",
         "But somehow, that was okay.",
         "The world felt... interesting.",
-        "I could float through the air...",
-        "...as long as I focused."
+        "Gravity felt different here...",
+        "...like I could dance with it."
     ],
     currentThought: 0,
     thoughtTimer: 0
@@ -87,10 +88,6 @@ const keys = {
 window.addEventListener('keydown', (e) => {
     if (e.code === 'Space') {
         keys.Space = true;
-        if (player.isGrounded) {
-            player.isJumping = true;
-            player.isGrounded = false;
-        }
     } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
         keys[e.key] = true;
     }
@@ -99,7 +96,6 @@ window.addEventListener('keydown', (e) => {
 window.addEventListener('keyup', (e) => {
     if (e.code === 'Space') {
         keys.Space = false;
-        player.isJumping = false;
     } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
         keys[e.key] = false;
     }
@@ -115,24 +111,23 @@ function checkCollision(rect1, rect2) {
 
 // Update player position and physics
 function updatePlayer() {
-    // Apply horizontal movement with air control
+    // Apply horizontal movement with improved air control
     if (keys.ArrowLeft) {
-        // Slower acceleration in air
-        const acceleration = player.isGrounded ? MOVE_SPEED : MOVE_SPEED * 0.7;
+        const acceleration = player.isGrounded ? MOVE_SPEED : MOVE_SPEED * AIR_CONTROL;
         player.velocityX = -acceleration;
     } else if (keys.ArrowRight) {
-        const acceleration = player.isGrounded ? MOVE_SPEED : MOVE_SPEED * 0.7;
+        const acceleration = player.isGrounded ? MOVE_SPEED : MOVE_SPEED * AIR_CONTROL;
         player.velocityX = acceleration;
     } else {
         player.velocityX *= FRICTION;
     }
 
-    // Apply jump force while space is held and player is jumping
-    if (keys.Space && player.isJumping) {
-        player.velocityY = JUMP_FORCE;
+    // Apply gradual upward acceleration while space is held
+    if (keys.Space) {
+        player.velocityY = Math.max(player.velocityY + JUMP_ACCELERATION, MIN_JUMP_VELOCITY);
     }
 
-    // Apply gravity
+    // Apply gravity (always active but countered by jump acceleration when space is held)
     player.velocityY = Math.min(player.velocityY + GRAVITY, TERMINAL_VELOCITY);
 
     // Update position
@@ -153,13 +148,11 @@ function updatePlayer() {
                 player.y = platform.y - player.height;
                 player.velocityY = 0;
                 player.isGrounded = true;
-                player.isJumping = false;  // Reset jumping state when landing
             }
             // Bottom collision (hitting head)
             else if (player.velocityY < 0 && player.y >= platform.y + platform.height) {
                 player.y = platform.y + platform.height;
                 player.velocityY = 0;
-                player.isJumping = false;  // Stop jumping if hitting head
             }
             // Side collisions
             else if (player.velocityX > 0) {
@@ -214,7 +207,7 @@ function draw() {
         }
     });
 
-    // Draw player (Thomas) with shadow and jump effect
+    // Draw player (Thomas) with shadow and float effect
     ctx.save();
     ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
     ctx.shadowBlur = SHADOW_BLUR;
@@ -225,16 +218,17 @@ function draw() {
     ctx.fillStyle = player.color;
     ctx.fillRect(player.x - camera.x, player.y - camera.y, player.width, player.height);
     
-    // Draw jump effect when jumping
-    if (player.isJumping) {
+    // Draw float effect when moving upward
+    if (player.velocityY < 0) {
         ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
         ctx.shadowBlur = 20;
         ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+        const glowHeight = Math.min(10, Math.abs(player.velocityY) * 2);
         ctx.fillRect(
             player.x - camera.x,
             player.y - camera.y + player.height,
             player.width,
-            5
+            glowHeight
         );
     }
     
