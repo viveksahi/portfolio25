@@ -667,12 +667,6 @@ document.addEventListener('DOMContentLoaded', function() {
             ctx.fillText(`Score: ${GAME_STATE.score}`, canvas.width - 20, 35);
             
             ctx.restore();
-
-            // Draw controls with better visibility
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-            ctx.font = 'bold 16px Arial';
-            ctx.textAlign = 'left';
-            ctx.fillText('Left/Right Arrows to move, Hold SPACE to jump', 20, 80);
         }
 
         // Game loop
