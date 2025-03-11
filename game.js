@@ -115,6 +115,10 @@ function checkCollision(rect1, rect2) {
 
 // Update player position and physics
 function updatePlayer() {
+    // Store previous position for collision resolution
+    const previousX = player.x;
+    const previousY = player.y;
+
     // Only allow horizontal movement if not touching ceiling
     if (!player.isTouchingCeiling) {
         if (keys.ArrowLeft) {
@@ -153,38 +157,32 @@ function updatePlayer() {
     // Check platform collisions
     platforms.forEach(platform => {
         if (checkCollision(player, platform)) {
-            // Calculate collision overlap on each axis
-            const overlapX = player.velocityX > 0 ? 
-                (player.x + player.width) - platform.x : 
-                platform.x + platform.width - player.x;
-            
-            const overlapY = player.velocityY > 0 ? 
-                (player.y + player.height) - platform.y : 
-                platform.y + platform.height - player.y;
+            // Determine the collision side based on previous position
+            const wasAbove = previousY + player.height <= platform.y;
+            const wasBelow = previousY >= platform.y + platform.height;
+            const wasLeft = previousX + player.width <= platform.x;
+            const wasRight = previousX >= platform.x + platform.width;
 
-            // Determine if collision is more horizontal or vertical
-            if (Math.abs(overlapX) < Math.abs(overlapY)) {
-                // Side collisions
-                if (player.velocityX > 0) {
-                    player.x = platform.x - player.width;
-                } else if (player.velocityX < 0) {
-                    player.x = platform.x + platform.width;
-                }
+            if (wasBelow) {
+                // Bottom collision (hitting head)
+                player.y = platform.y + platform.height;
+                player.velocityY = 0;
+                player.velocityX = 0;  // Stop horizontal movement
+                player.x = previousX;   // Maintain previous X position
+                player.isTouchingCeiling = true;
+            } else if (wasAbove) {
+                // Top collision (landing)
+                player.y = platform.y - player.height;
+                player.velocityY = 0;
+                player.isGrounded = true;
+            } else if (wasLeft) {
+                // Left side collision
+                player.x = platform.x - player.width;
                 player.velocityX = 0;
-            } else {
-                // Vertical collisions
-                if (player.velocityY > 0) {
-                    // Top collision (landing)
-                    player.y = platform.y - player.height;
-                    player.velocityY = 0;
-                    player.isGrounded = true;
-                } else if (player.velocityY < 0) {
-                    // Bottom collision (hitting head)
-                    player.y = platform.y + platform.height;
-                    player.velocityY = 0;
-                    player.isTouchingCeiling = true;
-                    player.velocityX = 0;  // Stop horizontal movement when hitting ceiling
-                }
+            } else if (wasRight) {
+                // Right side collision
+                player.x = platform.x + platform.width;
+                player.velocityX = 0;
             }
         }
     });
