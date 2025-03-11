@@ -61,6 +61,34 @@ document.addEventListener('DOMContentLoaded', function() {
         minPlatformY: 120
     };
 
+    // Game state
+    const GAME_STATE = {
+        score: 0,
+        currentEmotion: '😊',
+        currentFeeling: 'I am feeling happy today!',
+        emotions: [
+            { emoji: '😊', text: 'I am feeling happy today!' },
+            { emoji: '😢', text: 'I am feeling sad right now...' },
+            { emoji: '😴', text: 'I am feeling tired...' },
+            { emoji: '😡', text: 'I am feeling angry!' },
+            { emoji: '🤔', text: 'I am feeling thoughtful.' },
+            { emoji: '😌', text: 'I am feeling peaceful.' },
+            { emoji: '🥳', text: 'I am feeling excited!' },
+            { emoji: '😰', text: 'I am feeling anxious.' },
+            { emoji: '🥰', text: 'I am feeling loved.' },
+            { emoji: '😤', text: 'I am feeling frustrated.' }
+        ]
+    };
+
+    // Platform decoration settings
+    const DECORATION = {
+        emojiChance: 0.3,  // 30% chance for a platform to have an emoji
+        coinChance: 0.4,   // 40% chance for a platform to have a coin
+        coinValue: 10,     // Each coin is worth 10 points
+        coinSize: 20,      // Size of coin in pixels
+        emojiSize: 30      // Size of emoji in pixels
+    };
+
     // Set canvas size to match viewport
     function resizeCanvas() {
         canvas.width = window.innerWidth;
@@ -167,9 +195,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const width = WORLD.platformWidthRange.min + 
                      Math.random() * (WORLD.platformWidthRange.max - WORLD.platformWidthRange.min);
         
-        // Create varying heights but ensure they're reachable and within screen bounds
-        const minY = WORLD.minPlatformY;  // Minimum distance from top
-        const maxY = WORLD.height - WORLD.groundHeight - 80;  // Keep some space above ground
+        const minY = WORLD.minPlatformY;
+        const maxY = WORLD.height - WORLD.groundHeight - 80;
         const y = minY + Math.random() * (maxY - minY);
         
         const platform = {
@@ -178,11 +205,69 @@ document.addEventListener('DOMContentLoaded', function() {
             width: width,
             height: WORLD.platformHeightRange.min,
             color: '#333333',
-            isGround: false
+            isGround: false,
+            decorations: []
         };
+
+        // Add emoji with 30% chance
+        if (Math.random() < DECORATION.emojiChance) {
+            const randomEmotion = GAME_STATE.emotions[Math.floor(Math.random() * GAME_STATE.emotions.length)];
+            platform.decorations.push({
+                type: 'emoji',
+                x: platform.width / 2 - DECORATION.emojiSize / 2,
+                y: -DECORATION.emojiSize,
+                width: DECORATION.emojiSize,
+                height: DECORATION.emojiSize,
+                content: randomEmotion.emoji,
+                collected: false
+            });
+        }
+
+        // Add coin with 40% chance
+        if (Math.random() < DECORATION.coinChance) {
+            platform.decorations.push({
+                type: 'coin',
+                x: platform.width / 3,
+                y: -DECORATION.coinSize,
+                width: DECORATION.coinSize,
+                height: DECORATION.coinSize,
+                collected: false
+            });
+        }
 
         platforms.push(platform);
         WORLD.lastPlatformX = x + width;
+    }
+
+    // Check collision with platform decorations
+    function checkDecorationCollisions(platform) {
+        platform.decorations.forEach(decoration => {
+            if (!decoration.collected) {
+                const decorationX = platform.x + decoration.x;
+                const decorationY = platform.y + decoration.y;
+                
+                const decorationRect = {
+                    x: decorationX,
+                    y: decorationY,
+                    width: decoration.width,
+                    height: decoration.height
+                };
+
+                if (checkCollision(player, decorationRect)) {
+                    decoration.collected = true;
+                    
+                    if (decoration.type === 'coin') {
+                        GAME_STATE.score += DECORATION.coinValue;
+                    } else if (decoration.type === 'emoji') {
+                        const newEmotion = GAME_STATE.emotions.find(e => e.emoji === decoration.content);
+                        if (newEmotion) {
+                            GAME_STATE.currentEmotion = newEmotion.emoji;
+                            GAME_STATE.currentFeeling = newEmotion.text;
+                        }
+                    }
+                }
+            }
+        });
     }
 
     // Update game world
@@ -283,6 +368,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     player.velocityX = 0;
                 }
             }
+            // Check decorations
+            checkDecorationCollisions(platform);
         });
 
         // Constrain player to world height with some padding at top
@@ -346,6 +433,66 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
+        // Draw platforms and their decorations
+        platforms.forEach(platform => {
+            const screenX = platform.x - camera.x;
+            const screenY = platform.y - camera.y;
+            
+            if (screenX + platform.width >= 0 && 
+                screenX <= canvas.width && 
+                screenY + platform.height >= 0 && 
+                screenY <= canvas.height) {
+                
+                // Draw platform
+                ctx.save();
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+                ctx.shadowBlur = SHADOW_BLUR;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = SHADOW_OFFSET;
+                
+                ctx.fillStyle = platform.color;
+                ctx.fillRect(screenX, screenY, platform.width, platform.height);
+                
+                ctx.restore();
+
+                // Draw decorations
+                platform.decorations.forEach(decoration => {
+                    if (!decoration.collected) {
+                        const decorationX = screenX + decoration.x;
+                        const decorationY = screenY + decoration.y;
+
+                        if (decoration.type === 'coin') {
+                            // Draw coin
+                            ctx.save();
+                            ctx.fillStyle = '#FFD700';
+                            ctx.beginPath();
+                            ctx.arc(
+                                decorationX + decoration.width/2,
+                                decorationY + decoration.height/2,
+                                decoration.width/2,
+                                0,
+                                Math.PI * 2
+                            );
+                            ctx.fill();
+                            ctx.restore();
+                        } else if (decoration.type === 'emoji') {
+                            // Draw emoji
+                            ctx.save();
+                            ctx.font = `${decoration.height}px Arial`;
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+                            ctx.fillText(
+                                decoration.content,
+                                decorationX + decoration.width/2,
+                                decorationY + decoration.height/2
+                            );
+                            ctx.restore();
+                        }
+                    }
+                });
+            }
+        });
+
         // Draw player with shadow and float effect
         const playerScreenX = player.x - camera.x;
         const playerScreenY = player.y - camera.y;
@@ -376,10 +523,28 @@ document.addEventListener('DOMContentLoaded', function() {
         
         ctx.restore();
 
+        // Draw UI
+        ctx.save();
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(0, 0, canvas.width, 60);
+        
+        // Draw current emotion and feeling
+        ctx.font = 'bold 20px Arial';
+        ctx.fillStyle = 'white';
+        ctx.textAlign = 'left';
+        ctx.fillText(`${GAME_STATE.currentEmotion} ${GAME_STATE.currentFeeling}`, 20, 35);
+        
+        // Draw score
+        ctx.textAlign = 'right';
+        ctx.fillText(`Score: ${GAME_STATE.score}`, canvas.width - 20, 35);
+        
+        ctx.restore();
+
         // Draw controls
         ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
         ctx.font = 'bold 16px Arial';
-        ctx.fillText('Left/Right Arrows to move, Hold SPACE to jump', 20, 40);
+        ctx.textAlign = 'left';
+        ctx.fillText('Left/Right Arrows to move, Hold SPACE to jump', 20, 80);
     }
 
     // Game loop
