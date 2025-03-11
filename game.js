@@ -124,7 +124,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initial platforms
     const platforms = [
         // Ground is special - it moves with the player and is wider than the screen
-        { x: 0, y: WORLD.height - WORLD.groundHeight, width: canvas.width * 3, height: WORLD.groundHeight, color: '#666666', isGround: true, decorations: [] }
+        { 
+            x: 0, 
+            y: WORLD.height - WORLD.groundHeight, 
+            width: canvas.width * 3, 
+            height: WORLD.groundHeight, 
+            color: COLORS.ground, 
+            isGround: true, 
+            decorations: [] 
+        }
     ];
 
     // Player character
@@ -189,9 +197,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 y: platform.y,
                 width: 200,
                 height: 20,
-                color: '#333333',
+                color: COLORS.platform,  // Use the new color scheme
                 isGround: false,
-                decorations: []
+                decorations: []  // Initialize empty decorations array
             };
 
             // Add emoji with 30% chance
@@ -222,6 +230,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
             platforms.push(newPlatform);
         });
+
+        // Update the ground platform to use new color scheme
+        const ground = platforms.find(p => p.isGround);
+        if (ground) {
+            ground.color = COLORS.ground;
+        }
 
         WORLD.lastPlatformX = Math.max(...platforms.map(p => p.x + p.width));
     }
@@ -281,6 +295,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Check collision with platform decorations
     function checkDecorationCollisions(platform) {
+        // Safety check for platforms without decorations array
+        if (!platform.decorations) {
+            platform.decorations = [];
+            return;
+        }
+
         platform.decorations.forEach(decoration => {
             if (!decoration.collected) {
                 const decorationX = platform.x + decoration.x;
