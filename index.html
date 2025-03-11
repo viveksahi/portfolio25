@@ -3,38 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Game-Style Portfolio</title>
+    <title>Emotion Runner</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        html, body {
-            width: 100%;
-            height: 100%;
+        body {
             margin: 0;
             padding: 0;
             overflow: hidden;
-            background-color: #2C2C2C;
+            background-color: #1E1E2E;
+            font-family: Arial, sans-serif;
         }
-        
         #gameCanvas {
-            display: block;
-            position: absolute;
+            display: none;  /* Hidden initially */
+        }
+        #startModal {
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 1;
-            background-color: #2C2C2C;
-            image-rendering: pixelated;
-            image-rendering: crisp-edges;
+            background-color: #1E1E2E;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #2A2A3C;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            color: white;
+            max-width: 500px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+        }
+        .game-logo {
+            font-size: 72px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #FFD700;
+            margin: 0 0 20px 0;
+            font-size: 36px;
+        }
+        p {
+            color: #CCCCCC;
+            margin: 0 0 30px 0;
+            line-height: 1.6;
+        }
+        .instructions {
+            background-color: #3A3A4C;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        #startButton {
+            background-color: #FFD700;
+            color: #1E1E2E;
+            border: none;
+            padding: 15px 40px;
+            font-size: 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        #startButton:hover {
+            transform: scale(1.05);
         }
     </style>
 </head>
 <body>
+    <div id="startModal">
+        <div class="modal-content">
+            <div class="game-logo">🎮</div>
+            <h1>Emotion Runner</h1>
+            <p>Embark on an emotional journey! Run, jump, and collect different emotions to transform your character while gathering coins along the way.</p>
+            <div class="instructions">
+                <p><strong>How to Play:</strong><br>
+                🎮 Use Left/Right Arrow keys to move<br>
+                🎮 Hold Space to jump<br>
+                🎮 Collect emojis to change your form<br>
+                🎮 Gather coins for points</p>
+            </div>
+            <button id="startButton">Start Game</button>
+        </div>
+    </div>
     <canvas id="gameCanvas"></canvas>
     <script>
         // Debug logging
