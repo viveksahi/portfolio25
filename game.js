@@ -23,13 +23,13 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Canvas size set to:', canvas.width, 'x', canvas.height);
 
     // Physics constants
-    const GRAVITY = 0.6;
-    const JUMP_ACCELERATION = -1.0;
-    const MIN_JUMP_VELOCITY = -13;
-    const MOVE_SPEED = 13;
-    const AIR_CONTROL = 0.98;
-    const FRICTION = 0.92;
-    const TERMINAL_VELOCITY = 12;
+    const GRAVITY = 0.5;
+    const JUMP_ACCELERATION = -0.8;
+    const MIN_JUMP_VELOCITY = -12;
+    const MOVE_SPEED = 8;
+    const AIR_CONTROL = 0.85;
+    const FRICTION = 0.80;
+    const TERMINAL_VELOCITY = 10;
 
     // Shadow settings
     const SHADOW_OFFSET = 8;
@@ -50,15 +50,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const WORLD = {
         width: Infinity,
         height: window.innerHeight,
-        platformGenerationDistance: window.innerWidth * 5,
-        cleanupDistance: window.innerWidth * 10,
+        platformGenerationDistance: window.innerWidth * 3,
+        cleanupDistance: window.innerWidth * 6,
         lastPlatformX: 0,
-        minPlatformSpacing: 300,
-        maxPlatformSpacing: 500,
-        platformWidthRange: { min: 200, max: 400 },
+        minPlatformSpacing: 200,
+        maxPlatformSpacing: 400,
+        platformWidthRange: { min: 150, max: 300 },
         platformHeightRange: { min: 20, max: 20 },
         groundHeight: 40,
-        minPlatformY: 80
+        minPlatformY: 100
     };
 
     // Set canvas size to match viewport
