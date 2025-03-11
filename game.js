@@ -23,13 +23,13 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Canvas size set to:', canvas.width, 'x', canvas.height);
 
     // Physics constants
-    const GRAVITY = 0.5;
-    const JUMP_ACCELERATION = -0.8;
-    const MIN_JUMP_VELOCITY = -12;
+    const GRAVITY = 0.25;
+    const JUMP_ACCELERATION = -0.4;
+    const MIN_JUMP_VELOCITY = -8;
     const MOVE_SPEED = 8;
-    const AIR_CONTROL = 0.85;
+    const AIR_CONTROL = 0.9;
     const FRICTION = 0.80;
-    const TERMINAL_VELOCITY = 10;
+    const TERMINAL_VELOCITY = 8;
 
     // Shadow settings
     const SHADOW_OFFSET = 8;
