@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const GRAVITY = 0.35;              // Keep gravity the same for now
         const JUMP_ACCELERATION = -1.05;   // Reduced from -1.5 (70%)
         const MIN_JUMP_VELOCITY = -8.4;    // Reduced from -12 (70%)
-        const MOVE_SPEED = 8.4;            // Reduced from 12 (70%)
+        const MOVE_SPEED = 7.0;            // Reduced from 8.4 to 7.0 for better balance
         const AIR_CONTROL = 0.99;          // Keep air control the same
         const FRICTION = 0.92;             // Keep friction the same
         const TERMINAL_VELOCITY = 8.4;     // Reduced from 12 (70%)
@@ -113,9 +113,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const GAME_STATE = {
             score: 0,
             waterCans: 0,
-            distanceFromFire: 1000,  // Changed from 300 to 1000
-            fireSpeed: 2,
-            fireAcceleration: 0.005,
+            distanceFromFire: 1000,  // Keep initial distance
+            fireSpeed: 4,            // Increased from 2 to 4
+            fireAcceleration: 0.01,  // Doubled from 0.005 to 0.01
             gameOver: false,
             lastFireUpdate: Date.now()
         };
@@ -137,8 +137,8 @@ document.addEventListener('DOMContentLoaded', function() {
             particleSpeed: { min: 1.5, max: 4 },
             updateInterval: 16,
             lastUpdate: Date.now(),
-            baseSpeed: 2,          // Reduced from 4 to 2
-            maxSpeed: 6           // Reduced from 8 to 6
+            baseSpeed: 4,          // Increased from 2 to 4
+            maxSpeed: 7           // Increased from 6 to 7
         };
 
         // Set canvas size to match viewport
