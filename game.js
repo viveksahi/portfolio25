@@ -1,9 +1,15 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-// Set canvas size
-canvas.width = 800;
-canvas.height = 600;
+// Set canvas size to match viewport
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+
+// Initial resize and add event listener for window resize
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
 
 // Player character
 const player = {
@@ -72,11 +78,6 @@ function draw() {
     // Draw player character (temporary rectangle until sprite is loaded)
     ctx.fillStyle = '#000000';
     ctx.fillRect(player.x, player.y, player.width, player.height);
-
-    // Add retro-style text
-    ctx.font = "16px 'Press Start 2P', monospace";
-    ctx.fillStyle = '#000000';
-    ctx.fillText('Welcome to My Portfolio!', 20, 30);
 }
 
 // Game loop
