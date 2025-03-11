@@ -23,14 +23,15 @@ const TERMINAL_VELOCITY = 8;  // Reduced terminal velocity for slower falls
 // Game world settings
 const WORLD = {
     width: Infinity,  // Allow infinite horizontal movement
-    height: canvas.height * 2,
+    height: canvas.height,  // Constrain to screen height
     platformGenerationDistance: canvas.width * 2,  // Generate platforms when player is this far from last platform
     cleanupDistance: canvas.width * 4,  // Remove platforms this far behind the player
     lastPlatformX: 0,  // Track the last platform's X position
     minPlatformSpacing: 150,  // Minimum space between platforms
     maxPlatformSpacing: 300,  // Maximum space between platforms
     platformWidthRange: { min: 150, max: 250 },  // Random platform width range
-    platformHeightRange: { min: 20, max: 20 }  // Platform height (keeping consistent for now)
+    platformHeightRange: { min: 20, max: 20 },  // Platform height (keeping consistent for now)
+    groundHeight: 40  // Height of the ground platform
 };
 
 // Camera settings
@@ -50,8 +51,8 @@ const SHADOW_BLUR = 15;
 
 // Initial platforms
 const platforms = [
-    // Ground is special - it moves with the player
-    { x: 0, y: WORLD.height - 40, width: canvas.width * 2, height: 40, color: '#333333', isGround: true }
+    // Ground is special - it moves with the player and is wider than the screen
+    { x: 0, y: WORLD.height - WORLD.groundHeight, width: canvas.width * 3, height: WORLD.groundHeight, color: '#333333', isGround: true }
 ];
 
 // Player character - Thomas
@@ -143,9 +144,9 @@ function generatePlatform() {
     const width = WORLD.platformWidthRange.min + 
                  Math.random() * (WORLD.platformWidthRange.max - WORLD.platformWidthRange.min);
     
-    // Create varying heights but ensure they're reachable
-    const minY = WORLD.height - 360;  // Highest point
-    const maxY = WORLD.height - 120;  // Lowest point
+    // Create varying heights but ensure they're reachable and within screen bounds
+    const minY = WORLD.height * 0.3;  // Highest point (30% from top)
+    const maxY = WORLD.height - 120;   // Lowest point
     const y = minY + Math.random() * (maxY - minY);
     
     const platform = {
@@ -166,7 +167,10 @@ function updateWorld() {
     // Update ground position to follow player
     const ground = platforms.find(p => p.isGround);
     if (ground) {
-        ground.x = Math.floor(player.x / canvas.width) * canvas.width;
+        // Keep ground centered on player and wider than screen
+        ground.x = Math.floor(player.x / canvas.width) * canvas.width - canvas.width;
+        ground.width = canvas.width * 3;  // Ensure ground is always wider than screen
+        ground.y = WORLD.height - WORLD.groundHeight;  // Ensure ground is at bottom
     }
 
     // Generate new platforms if needed
@@ -258,13 +262,16 @@ function updatePlayer() {
         }
     });
 
+    // Constrain player to world height
+    player.y = Math.max(0, Math.min(player.y, WORLD.height - player.height));
+
     // Update world after player position is updated
     updateWorld();
 
     // Update camera with smoother following and vertical deadzone
     const targetX = Math.max(0, Math.min(player.x - canvas.width / 2, WORLD.width - canvas.width));
     
-    // Only move camera vertically if player is outside the deadzone
+    // Only move camera vertically if player is outside the deadzone and within world bounds
     const screenCenterY = camera.y + canvas.height / 2;
     const playerDistanceFromCenter = player.y - screenCenterY;
     
