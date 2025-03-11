@@ -67,6 +67,7 @@ const player = {
     velocityX: 0,
     velocityY: 0,
     isGrounded: false,
+    isTouchingCeiling: false,  // New state to track ceiling contact
     color: '#DE4949',  // Thomas's red color
     name: "Thomas",
     thoughts: [
@@ -74,7 +75,7 @@ const player = {
         "But somehow, that was okay.",
         "The world felt... interesting.",
         "Gravity felt different here...",
-        "...like I could dance with it."
+        "Some paths were blocked..."
     ],
     currentThought: 0,
     thoughtTimer: 0
@@ -114,19 +115,24 @@ function checkCollision(rect1, rect2) {
 
 // Update player position and physics
 function updatePlayer() {
-    // Apply horizontal movement with improved air control
-    if (keys.ArrowLeft) {
-        const acceleration = player.isGrounded ? MOVE_SPEED : MOVE_SPEED * AIR_CONTROL;
-        player.velocityX = -acceleration;
-    } else if (keys.ArrowRight) {
-        const acceleration = player.isGrounded ? MOVE_SPEED : MOVE_SPEED * AIR_CONTROL;
-        player.velocityX = acceleration;
+    // Only allow horizontal movement if not touching ceiling
+    if (!player.isTouchingCeiling) {
+        if (keys.ArrowLeft) {
+            const acceleration = player.isGrounded ? MOVE_SPEED : MOVE_SPEED * AIR_CONTROL;
+            player.velocityX = -acceleration;
+        } else if (keys.ArrowRight) {
+            const acceleration = player.isGrounded ? MOVE_SPEED : MOVE_SPEED * AIR_CONTROL;
+            player.velocityX = acceleration;
+        } else {
+            player.velocityX *= FRICTION;
+        }
     } else {
-        player.velocityX *= FRICTION;
+        // Stop horizontal movement when touching ceiling
+        player.velocityX = 0;
     }
 
     // Apply gradual upward acceleration while space is held
-    if (keys.Space) {
+    if (keys.Space && !player.isTouchingCeiling) {
         player.velocityY = Math.max(player.velocityY + JUMP_ACCELERATION, MIN_JUMP_VELOCITY);
     }
 
@@ -140,8 +146,9 @@ function updatePlayer() {
     // Check world boundaries
     player.x = Math.max(0, Math.min(player.x, WORLD.width - player.width));
 
-    // Reset grounded state
+    // Reset states
     player.isGrounded = false;
+    player.isTouchingCeiling = false;
 
     // Check platform collisions
     platforms.forEach(platform => {
@@ -156,14 +163,17 @@ function updatePlayer() {
             else if (player.velocityY < 0 && player.y >= platform.y + platform.height) {
                 player.y = platform.y + platform.height;
                 player.velocityY = 0;
+                player.isTouchingCeiling = true;  // Set ceiling contact state
             }
-            // Side collisions
-            else if (player.velocityX > 0) {
-                player.x = platform.x - player.width;
-                player.velocityX = 0;
-            } else if (player.velocityX < 0) {
-                player.x = platform.x + platform.width;
-                player.velocityX = 0;
+            // Side collisions (only if not touching ceiling)
+            else if (!player.isTouchingCeiling) {
+                if (player.velocityX > 0) {
+                    player.x = platform.x - player.width;
+                    player.velocityX = 0;
+                } else if (player.velocityX < 0) {
+                    player.x = platform.x + platform.width;
+                    player.velocityX = 0;
+                }
             }
         }
     });
@@ -234,8 +244,8 @@ function draw() {
     ctx.fillStyle = player.color;
     ctx.fillRect(player.x - camera.x, player.y - camera.y, player.width, player.height);
     
-    // Draw float effect when moving upward
-    if (player.velocityY < 0) {
+    // Draw float effect when moving upward and not touching ceiling
+    if (player.velocityY < 0 && !player.isTouchingCeiling) {
         ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
         ctx.shadowBlur = 20;
         ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
