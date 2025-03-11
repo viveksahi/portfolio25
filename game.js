@@ -12,9 +12,9 @@ resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
 
 // Physics constants
-const GRAVITY = 0.5;
-const JUMP_FORCE = -12;
-const MOVE_SPEED = 5;
+const GRAVITY = 0.4;
+const JUMP_FORCE = -10;
+const MOVE_SPEED = 4;
 const FRICTION = 0.8;
 
 // Game world settings
@@ -31,21 +31,25 @@ const camera = {
     height: canvas.height
 };
 
-// Platforms - positioned relative to screen size
+// Shadow settings
+const SHADOW_OFFSET = 8;
+const SHADOW_BLUR = 15;
+
+// Platforms - positioned relative to screen size with adjusted heights
 const platforms = [
     // Ground
     { x: 0, y: WORLD.height - 40, width: WORLD.width, height: 40, color: '#333333' },
-    // Starting platforms
-    { x: canvas.width * 0.2, y: WORLD.height - 200, width: 200, height: 20, color: '#333333' },
-    { x: canvas.width * 0.6, y: WORLD.height - 300, width: 200, height: 20, color: '#333333' },
-    { x: canvas.width * 1.0, y: WORLD.height - 400, width: 200, height: 20, color: '#333333' },
-    { x: canvas.width * 1.4, y: WORLD.height - 300, width: 200, height: 20, color: '#333333' },
-    { x: canvas.width * 1.8, y: WORLD.height - 200, width: 200, height: 20, color: '#333333' },
-    // Higher platforms
-    { x: canvas.width * 0.4, y: WORLD.height - 500, width: 150, height: 20, color: '#333333' },
-    { x: canvas.width * 0.8, y: WORLD.height - 600, width: 150, height: 20, color: '#333333' },
-    { x: canvas.width * 1.2, y: WORLD.height - 550, width: 150, height: 20, color: '#333333' },
-    { x: canvas.width * 1.6, y: WORLD.height - 450, width: 150, height: 20, color: '#333333' }
+    // Starting platforms - heights reduced and more evenly spaced
+    { x: canvas.width * 0.2, y: WORLD.height - 120, width: 200, height: 20, color: '#333333' },
+    { x: canvas.width * 0.6, y: WORLD.height - 180, width: 200, height: 20, color: '#333333' },
+    { x: canvas.width * 1.0, y: WORLD.height - 240, width: 200, height: 20, color: '#333333' },
+    { x: canvas.width * 1.4, y: WORLD.height - 180, width: 200, height: 20, color: '#333333' },
+    { x: canvas.width * 1.8, y: WORLD.height - 120, width: 200, height: 20, color: '#333333' },
+    // Higher platforms - heights reduced and more evenly spaced
+    { x: canvas.width * 0.4, y: WORLD.height - 300, width: 150, height: 20, color: '#333333' },
+    { x: canvas.width * 0.8, y: WORLD.height - 360, width: 150, height: 20, color: '#333333' },
+    { x: canvas.width * 1.2, y: WORLD.height - 300, width: 150, height: 20, color: '#333333' },
+    { x: canvas.width * 1.6, y: WORLD.height - 240, width: 150, height: 20, color: '#333333' }
 ];
 
 // Player character - Thomas
@@ -177,7 +181,7 @@ function draw() {
     ctx.fillStyle = '#1C1C1C';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Draw platforms
+    // Draw platforms with shadows
     platforms.forEach(platform => {
         const screenX = platform.x - camera.x;
         const screenY = platform.y - camera.y;
@@ -187,14 +191,31 @@ function draw() {
             screenY + platform.height >= 0 && 
             screenY <= canvas.height) {
             
+            // Draw platform shadow
+            ctx.save();
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+            ctx.shadowBlur = SHADOW_BLUR;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = SHADOW_OFFSET;
+            
             ctx.fillStyle = platform.color;
             ctx.fillRect(screenX, screenY, platform.width, platform.height);
+            
+            ctx.restore();
         }
     });
 
-    // Draw player (Thomas)
+    // Draw player (Thomas) with shadow
+    ctx.save();
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+    ctx.shadowBlur = SHADOW_BLUR;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = SHADOW_OFFSET;
+    
     ctx.fillStyle = player.color;
     ctx.fillRect(player.x - camera.x, player.y - camera.y, player.width, player.height);
+    
+    ctx.restore();
 
     // Draw current thought
     ctx.fillStyle = '#FFFFFF';
