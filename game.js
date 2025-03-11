@@ -371,10 +371,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Update thought timer with variable duration based on text length
         player.thoughtTimer++;
-        const thoughtDuration = 180 + (player.thoughts[player.currentChapter][player.currentThought].length * 2);
-        if (player.thoughtTimer > thoughtDuration) {
+        if (player.currentChapter >= 0 && 
+            player.currentChapter < player.thoughts.length && 
+            player.currentThought >= 0 && 
+            player.currentThought < player.thoughts[player.currentChapter].length) {
+            
+            const thoughtDuration = 180 + (player.thoughts[player.currentChapter][player.currentThought].length * 2);
+            if (player.thoughtTimer > thoughtDuration) {
+                player.thoughtTimer = 0;
+                player.currentThought = (player.currentThought + 1) % player.thoughts[player.currentChapter].length;
+            }
+        } else {
+            // Reset thought state if invalid
+            player.currentChapter = 0;
+            player.currentThought = 0;
             player.thoughtTimer = 0;
-            player.currentThought = (player.currentThought + 1) % player.thoughts[player.currentChapter].length;
         }
     }
 
@@ -444,14 +455,21 @@ document.addEventListener('DOMContentLoaded', function() {
         // Draw current thought with fade effect
         const thoughtOpacity = Math.min(1, (30 / player.thoughtTimer));
         ctx.fillStyle = `rgba(255, 255, 255, ${thoughtOpacity})`;
-        ctx.font = 'bold 20px Arial';  // Made text bold
-        ctx.fillText(player.thoughts[player.currentChapter][player.currentThought], 20, 40);
+        ctx.font = 'bold 20px Arial';
+        if (player.currentChapter >= 0 && 
+            player.currentChapter < player.thoughts.length && 
+            player.currentThought >= 0 && 
+            player.currentThought < player.thoughts[player.currentChapter].length) {
+            ctx.fillText(player.thoughts[player.currentChapter][player.currentThought], 20, 40);
+        }
 
         // Draw chapter indicator
         const chapters = ["Beginning", "Discovery", "Purpose", "Growth", "Enlightenment"];
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';  // Made text more visible
-        ctx.font = 'bold 16px Arial';  // Made text bold
-        ctx.fillText(`Chapter: ${chapters[player.currentChapter]}`, 20, 70);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.font = 'bold 16px Arial';
+        if (player.currentChapter >= 0 && player.currentChapter < chapters.length) {
+            ctx.fillText(`Chapter: ${chapters[player.currentChapter]}`, 20, 70);
+        }
 
         // Draw controls with reduced opacity
         ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';  // Made controls more visible
