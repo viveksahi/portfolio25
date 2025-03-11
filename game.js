@@ -89,11 +89,11 @@ const keys = {
 window.addEventListener('keydown', (e) => {
     if (e.code === 'Space') {
         keys.Space = true;
-        if (player.isGrounded) {
+        if (player.isGrounded && !player.isCharging) {
             player.isCharging = true;
+            player.jumpCharge = 0;  // Reset jump charge when starting
         }
-    }
-    if (keys.hasOwnProperty(e.key)) {
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
         keys[e.key] = true;
     }
 });
@@ -106,10 +106,8 @@ window.addEventListener('keyup', (e) => {
             player.velocityY = Math.min(MAX_JUMP_FORCE, MIN_JUMP_FORCE - player.jumpCharge);
             player.isGrounded = false;
             player.isCharging = false;
-            player.jumpCharge = 0;
         }
-    }
-    if (keys.hasOwnProperty(e.key)) {
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
         keys[e.key] = false;
     }
 });
@@ -136,6 +134,7 @@ function updatePlayer() {
     // Handle jump charging
     if (player.isCharging && player.isGrounded) {
         player.jumpCharge = Math.min(player.jumpCharge + JUMP_CHARGE_RATE, Math.abs(MAX_JUMP_FORCE - MIN_JUMP_FORCE));
+        player.velocityY = 0;  // Stay in place while charging
     }
 
     // Apply gravity if not charging
@@ -234,7 +233,14 @@ function draw() {
     // Draw jump charge indicator if charging
     if (player.isCharging) {
         const chargePercent = player.jumpCharge / (MAX_JUMP_FORCE - MIN_JUMP_FORCE);
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        const glowIntensity = 0.3 + (chargePercent * 0.7);  // Glow gets brighter as charge increases
+        
+        // Draw glow effect
+        ctx.shadowColor = `rgba(255, 255, 255, ${glowIntensity})`;
+        ctx.shadowBlur = 20;
+        
+        // Draw charge bar
+        ctx.fillStyle = `rgba(255, 255, 255, ${glowIntensity})`;
         ctx.fillRect(
             player.x - camera.x,
             player.y - camera.y - 10,
